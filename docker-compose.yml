@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: takehome_mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: takehome
+      MYSQL_USER: takehome
+      MYSQL_PASSWORD: takehome
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./backend/database/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  api:
+    build: ./backend
+    container_name: takehome_api
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      DB_HOST: mysql
+      DB_USER: takehome
+      DB_PASSWORD: takehome
+      DB_NAME: takehome
+    depends_on:
+      - mysql
+    volumes:
+      - ./backend:/app
+    command: npm run dev
+
+volumes:
+  mysql_data:
