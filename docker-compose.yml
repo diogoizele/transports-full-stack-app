@@ -3,6 +3,7 @@ version: '3.8'
 services:
   mysql:
     image: mysql:8.0
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     container_name: takehome_mysql
     restart: always
     environment:
@@ -27,11 +28,9 @@ services:
       DB_USER: takehome
       DB_PASSWORD: takehome
       DB_NAME: takehome
+      JWT_SECRET: takehome 
     depends_on:
       - mysql
-    volumes:
-      - ./backend:/app
-    command: npm run dev
 
 volumes:
   mysql_data:

@@ -1,20 +1,26 @@
 {
-  "name": "takehome-api",
+  "name": "takehome-backend",
   "version": "1.0.0",
-  "main": "src/server.js",
   "scripts": {
-    "dev": "nodemon src/server.js",
-    "start": "node src/server.js"
+    "dev": "bun --watch src/server.ts",
+    "start": "bun src/server.ts",
+    "create:password": "bun scripts/bcrypt-password-generator.ts"
   },
   "dependencies": {
-    "bcrypt": "^5.1.0",
+    "bcrypt": "^5.1.1",
     "cors": "^2.8.5",
-    "dotenv": "^16.0.3",
+    "dotenv": "^17.3.1",
     "express": "^4.18.2",
-    "jsonwebtoken": "^9.0.0",
-    "mysql2": "^3.6.0"
+    "jsonwebtoken": "^9.0.3",
+    "mysql2": "^3.9.0",
+    "uuid": "^13.0.0"
   },
   "devDependencies": {
-    "nodemon": "^3.0.1"
+    "@types/bcrypt": "^5.0.2",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^20.11.30",
+    "typescript": "^5.4.0"
   }
 }
