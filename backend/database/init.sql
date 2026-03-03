@@ -49,10 +49,11 @@ CREATE TABLE foto_registro (
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   deleted_at DATETIME NULL,
-  FOREIGN KEY (registro_id) REFERENCES registro(id),
+  FOREIGN KEY (registro_id) REFERENCES registro(id) ON DELETE CASCADE,
   INDEX idx_foto_registro_updated (updated_at),
   INDEX idx_foto_registro_deleted (deleted_at)
 );
+
 
 
 INSERT INTO empresa (id, nome) VALUES
