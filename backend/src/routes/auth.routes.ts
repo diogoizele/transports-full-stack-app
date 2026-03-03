@@ -18,16 +18,21 @@ authRoutes.post("/login", async (req, res) => {
     }
 
     const [rows] = await pool.execute<RowDataPacket[]>(
-      `SELECT 
-              id,
-              nome as full_name,
-              login as username,
-              senha as password,
-              empresa_id as company_id
-            FROM
-              usuario
-            WHERE
-              login = ?`,
+      `
+        SELECT 
+          u.id,
+          u.nome AS full_name,
+          u.login AS username,
+          u.senha AS password,
+          u.empresa_id AS company_id,
+          e.nome AS company_name
+        FROM usuario u
+        INNER JOIN empresa e ON e.id = u.empresa_id
+        WHERE u.login = ?
+          AND u.deleted_at IS NULL
+          AND e.deleted_at IS NULL
+        LIMIT 1
+      `,
       [username],
     );
 
@@ -55,6 +60,7 @@ authRoutes.post("/login", async (req, res) => {
         username: user.username,
         fullName: user.full_name,
         companyId: user.company_id,
+        companyName: user.company_name,
       },
       jwtSecret,
       { expiresIn: "8h" },

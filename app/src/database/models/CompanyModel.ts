@@ -6,7 +6,7 @@ export class CompanyModel extends Model {
 
   @field('name') name!: string;
 
-  @field('created_at') createdAt!: number;
-  @field('updated_at') updatedAt!: number;
-  @field('deleted_at') deletedAt?: number;
+  @field('created_at') createdAt!: Date;
+  @field('updated_at') updatedAt!: Date;
+  @field('deleted_at') deletedAt?: Date;
 }

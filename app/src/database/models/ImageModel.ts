@@ -11,9 +11,9 @@ export class ImageModel extends Model {
   @field('record_id') recordId!: string;
   @field('path') path!: string;
 
-  @field('created_at') createdAt!: number;
-  @field('updated_at') updatedAt!: number;
-  @field('deleted_at') deletedAt?: number;
+  @field('created_at') createdAt!: Date;
+  @field('updated_at') updatedAt!: Date;
+  @field('deleted_at') deletedAt?: Date;
 
   @relation('records', 'record_id') record!: any;
 }

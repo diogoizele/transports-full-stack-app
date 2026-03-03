@@ -9,15 +9,15 @@ export class RecordModel extends Model {
   } as const;
 
   @field('type') type!: 'COMPRA' | 'VENDA';
-  @field('date_time') dateTime!: number;
+  @field('date_time') dateTime!: string;
   @field('description') description!: string;
 
   @field('company_id') companyId!: string;
   @field('user_id') userId!: string;
 
-  @field('created_at') createdAt!: number;
-  @field('updated_at') updatedAt!: number;
-  @field('deleted_at') deletedAt?: number;
+  @field('created_at') createdAt!: Date;
+  @field('updated_at') updatedAt!: Date;
+  @field('deleted_at') deletedAt?: Date;
 
   @children('images') images!: any;
 }

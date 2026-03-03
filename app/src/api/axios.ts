@@ -6,6 +6,8 @@ export const api = axios.create({
   baseURL: Config.API_URL,
 });
 
+console.log({ baseURL: Config.API_URL });
+
 api.interceptors.request.use(config => {
   const token = useAuthStore.getState().token;
   if (token) {

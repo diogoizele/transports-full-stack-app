@@ -8,36 +8,40 @@ export type JwtPayload = {
   username: string;
   fullName: string;
   companyId: string;
-
+  companyName: string;
   iat?: number;
   exp?: number;
 };
 
-export const saveToken = async (token: string) => {
-  await AsyncStorage.setItem(TOKEN_KEY, token);
-};
+export const TokenService = {
+  async saveToken(token: string): Promise<void> {
+    await AsyncStorage.setItem(TOKEN_KEY, token);
+  },
 
-export const getToken = async (): Promise<string | null> => {
-  return await AsyncStorage.getItem(TOKEN_KEY);
-};
+  async getToken(): Promise<string | null> {
+    return await AsyncStorage.getItem(TOKEN_KEY);
+  },
 
-export const getUserFromToken = async (): Promise<JwtPayload | null> => {
-  const token = await getToken();
-  if (!token) return null;
+  async getUserFromToken(): Promise<JwtPayload | null> {
+    const token = await this.getToken();
+    if (!token) return null;
 
-  try {
-    const payload = jwtDecode<JwtPayload>(token);
-    const now = Date.now() / 1000;
-    if (payload.exp && payload.exp < now) {
-      await AsyncStorage.removeItem(TOKEN_KEY);
+    try {
+      const payload = jwtDecode<JwtPayload>(token);
+      const now = Date.now() / 1000;
+
+      if (payload.exp && payload.exp < now) {
+        await AsyncStorage.removeItem(TOKEN_KEY);
+        return null;
+      }
+
+      return payload;
+    } catch {
       return null;
     }
-    return payload;
-  } catch {
-    return null;
-  }
-};
+  },
 
-export const clearToken = async () => {
-  await AsyncStorage.removeItem(TOKEN_KEY);
+  async clearToken(): Promise<void> {
+    await AsyncStorage.removeItem(TOKEN_KEY);
+  },
 };

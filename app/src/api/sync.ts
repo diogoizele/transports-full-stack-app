@@ -1,26 +1,38 @@
-import { synchronize } from '@nozbe/watermelondb/sync';
-
-import { database } from '../database';
+import { SyncDatabaseChangeSet } from '@nozbe/watermelondb/sync';
 import { api } from '../api/axios';
+import { RecordResponse } from '../types/RecordResponse';
 
-export async function sync() {
-  await synchronize({
-    database,
-    pullChanges: async ({ lastPulledAt }) => {
-      const response = await api.get('/sync', {
-        params: { lastPulledAt },
-      });
+interface GetSyncParams {
+  lastPulledAt?: number;
+}
 
-      return {
-        changes: response.data.changes,
-        timestamp: response.data.timestamp,
-      };
-    },
-    pushChanges: async ({ changes, lastPulledAt }) => {
-      await api.post('/sync', {
-        changes,
-        lastPulledAt,
-      });
-    },
+interface GetSyncResponse {
+  changes: {
+    records: {
+      created: RecordResponse[];
+      updated: RecordResponse[];
+      deleted: string[];
+    };
+  };
+  timestamp: number;
+}
+
+interface PostSyncPayload {
+  changes: SyncDatabaseChangeSet;
+  lastPulledAt?: number;
+}
+
+export async function getSync(params: GetSyncParams) {
+  const response = await api.get<GetSyncResponse>('/sync', {
+    params,
   });
+
+  return {
+    changes: response.data.changes,
+    timestamp: response.data.timestamp,
+  };
+}
+
+export async function postSync(data: PostSyncPayload) {
+  await api.post('/sync', data);
 }

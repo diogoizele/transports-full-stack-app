@@ -1,11 +1,5 @@
 import { create } from 'zustand';
-import {
-  saveToken,
-  getUserFromToken,
-  clearToken,
-  JwtPayload,
-  getToken,
-} from '../services/tokenService';
+import { TokenService, JwtPayload } from '../services/tokenService';
 
 type AuthState = {
   token: string | null;
@@ -13,6 +7,7 @@ type AuthState = {
   username: string | null;
   fullName: string | null;
   companyId: string | null;
+  companyName: string | null;
   setToken: (token: string) => Promise<void>;
   logout: () => Promise<void>;
   bootstrap: () => Promise<void>;
@@ -24,11 +19,12 @@ export const useAuthStore = create<AuthState>(set => ({
   username: null,
   fullName: null,
   companyId: null,
+  companyName: null,
 
   setToken: async (token: string) => {
     try {
-      await saveToken(token);
-      const payload: JwtPayload | null = await getUserFromToken();
+      await TokenService.saveToken(token);
+      const payload: JwtPayload | null = await TokenService.getUserFromToken();
       if (payload) {
         set({
           token,
@@ -36,6 +32,7 @@ export const useAuthStore = create<AuthState>(set => ({
           username: payload.username,
           fullName: payload.fullName,
           companyId: payload.companyId,
+          companyName: payload.companyName,
         });
       }
     } catch (e) {
@@ -46,29 +43,31 @@ export const useAuthStore = create<AuthState>(set => ({
         username: null,
         fullName: null,
         companyId: null,
+        companyName: null,
       });
     }
   },
 
   logout: async () => {
-    await clearToken();
+    await TokenService.clearToken();
     set({
       token: null,
       userId: null,
       username: null,
       fullName: null,
       companyId: null,
+      companyName: null,
     });
   },
 
   bootstrap: async () => {
     try {
-      const token = await getToken();
+      const token = await TokenService.getToken();
       if (!token) return;
 
-      const payload = await getUserFromToken();
+      const payload = await TokenService.getUserFromToken();
       if (!payload) {
-        await clearToken();
+        await TokenService.clearToken();
         return;
       }
 
@@ -78,6 +77,7 @@ export const useAuthStore = create<AuthState>(set => ({
         username: payload.username,
         fullName: payload.fullName,
         companyId: payload.companyId,
+        companyName: payload.companyName,
       });
     } catch {
       set({
@@ -86,6 +86,7 @@ export const useAuthStore = create<AuthState>(set => ({
         username: null,
         fullName: null,
         companyId: null,
+        companyName: null,
       });
     }
   },

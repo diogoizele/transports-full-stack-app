@@ -6,12 +6,14 @@ interface TextFieldProps extends TextInputProps {
   label?: string;
   error?: string;
   disabled?: boolean;
+  isTextArea?: boolean;
 }
 
 const TextField: React.FC<TextFieldProps> = ({
   label,
   error,
   disabled,
+  isTextArea,
   ...props
 }) => {
   const [isFocused, setIsFocused] = useState(false);
@@ -22,10 +24,15 @@ const TextField: React.FC<TextFieldProps> = ({
 
       <StyledInput
         {...props}
+        multiline={isTextArea}
+        textAlignVertical={isTextArea ? 'top' : 'center'}
         editable={!disabled}
         hasError={!!error}
+        autoCapitalize="none"
+        autoCorrect={false}
         isFocused={isFocused}
         isDisabled={!!disabled}
+        isTextArea={!!isTextArea}
         placeholderTextColor="#A0A0A0"
         onFocus={e => {
           setIsFocused(true);
@@ -60,6 +67,7 @@ type InputProps = {
   hasError: boolean;
   isFocused: boolean;
   isDisabled: boolean;
+  isTextArea: boolean;
 };
 
 const StyledInput = styled.TextInput<InputProps>`
@@ -68,6 +76,12 @@ const StyledInput = styled.TextInput<InputProps>`
   padding-vertical: 12px;
   padding-horizontal: 16px;
   font-size: 16px;
+
+  ${({ isTextArea }) =>
+    isTextArea &&
+    css`
+      min-height: 120px;
+    `}
 
   color: ${({ theme, isDisabled }) =>
     isDisabled ? theme.colors.textSecondary : theme.colors.text};

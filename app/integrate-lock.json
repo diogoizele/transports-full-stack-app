@@ -1,0 +1,173 @@
+{
+  "lockfileVersion": 1,
+  "packages": {
+    "@babel/core": {
+      "version": "^7.25.2",
+      "integrated": false
+    },
+    "@babel/plugin-proposal-class-properties": {
+      "version": "^7.18.6",
+      "integrated": false
+    },
+    "@babel/plugin-proposal-decorators": {
+      "version": "^7.29.0",
+      "integrated": false
+    },
+    "@babel/preset-env": {
+      "version": "^7.25.3",
+      "integrated": false
+    },
+    "@babel/runtime": {
+      "version": "^7.25.0",
+      "integrated": false
+    },
+    "@nozbe/watermelondb": {
+      "version": "^0.28.0",
+      "integrated": false
+    },
+    "@nozbe/with-observables": {
+      "version": "^1.6.0",
+      "integrated": false
+    },
+    "@react-native-async-storage/async-storage": {
+      "version": "^3.0.1",
+      "integrated": false
+    },
+    "@react-native-community/cli": {
+      "version": "20.1.0",
+      "integrated": false
+    },
+    "@react-native-community/cli-platform-android": {
+      "version": "20.1.0",
+      "integrated": false
+    },
+    "@react-native-community/cli-platform-ios": {
+      "version": "20.1.0",
+      "integrated": false
+    },
+    "@react-native-community/netinfo": {
+      "version": "^12.0.1",
+      "integrated": false
+    },
+    "@react-native-vector-icons/material-icons": {
+      "version": "^12.4.1",
+      "integrated": false
+    },
+    "@react-native/babel-preset": {
+      "version": "0.84.1",
+      "integrated": false
+    },
+    "@react-native/eslint-config": {
+      "version": "0.84.1",
+      "integrated": false
+    },
+    "@react-native/metro-config": {
+      "version": "0.84.1",
+      "integrated": false
+    },
+    "@react-native/new-app-screen": {
+      "version": "0.84.1",
+      "integrated": false
+    },
+    "@react-native/typescript-config": {
+      "version": "0.84.1",
+      "integrated": false
+    },
+    "@react-navigation/native": {
+      "version": "^7.1.31",
+      "integrated": false
+    },
+    "@react-navigation/native-stack": {
+      "version": "^7.14.2",
+      "integrated": false
+    },
+    "@types/jest": {
+      "version": "^29.5.13",
+      "integrated": false
+    },
+    "@types/react": {
+      "version": "^19.2.0",
+      "integrated": false
+    },
+    "@types/react-test-renderer": {
+      "version": "^19.1.0",
+      "integrated": false
+    },
+    "@types/styled-components-react-native": {
+      "version": "^5.2.5",
+      "integrated": false
+    },
+    "axios": {
+      "version": "^1.13.6",
+      "integrated": false
+    },
+    "eslint": {
+      "version": "^8.19.0",
+      "integrated": false
+    },
+    "jest": {
+      "version": "^29.6.3",
+      "integrated": false
+    },
+    "jwt-decode": {
+      "version": "^4.0.0",
+      "integrated": false
+    },
+    "metro-react-native-babel-preset": {
+      "version": "^0.77.0",
+      "integrated": false
+    },
+    "prettier": {
+      "version": "2.8.8",
+      "integrated": false
+    },
+    "react": {
+      "version": "19.2.3",
+      "integrated": false
+    },
+    "react-native": {
+      "version": "0.84.1",
+      "integrated": false
+    },
+    "react-native-config": {
+      "version": "^1.6.1",
+      "integrated": true
+    },
+    "react-native-date-picker": {
+      "version": "^5.0.13",
+      "integrated": false
+    },
+    "react-native-image-picker": {
+      "version": "^8.2.1",
+      "integrated": false
+    },
+    "react-native-safe-area-context": {
+      "version": "^5.7.0",
+      "integrated": false
+    },
+    "react-native-screens": {
+      "version": "^4.24.0",
+      "integrated": false
+    },
+    "react-native-toast-message": {
+      "version": "^2.3.3",
+      "integrated": false
+    },
+    "react-test-renderer": {
+      "version": "19.2.3",
+      "integrated": false
+    },
+    "styled-components": {
+      "version": "^6.3.11",
+      "integrated": false
+    },
+    "typescript": {
+      "version": "^5.8.3",
+      "integrated": false
+    },
+    "zustand": {
+      "version": "^5.0.11",
+      "integrated": false
+    }
+  }
+}
