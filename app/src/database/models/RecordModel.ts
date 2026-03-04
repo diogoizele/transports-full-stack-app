@@ -1,5 +1,6 @@
 import { Model } from '@nozbe/watermelondb';
 import { field, children } from '@nozbe/watermelondb/decorators';
+import { ModelFields } from '../../types/ModelFields';
 
 export class RecordModel extends Model {
   static table = 'records';
@@ -15,9 +16,11 @@ export class RecordModel extends Model {
   @field('company_id') companyId!: string;
   @field('user_id') userId!: string;
 
-  @field('created_at') createdAt!: Date;
-  @field('updated_at') updatedAt!: Date;
-  @field('deleted_at') deletedAt?: Date;
+  @field('created_at') createdAt!: number;
+  @field('updated_at') updatedAt!: number;
+  @field('deleted_at') deletedAt?: number | null;
 
   @children('images') images!: any;
 }
+
+export type RecordChange = ModelFields<RecordModel, 'images'>;

@@ -74,7 +74,9 @@ export function useRecordForm({
       ...nextValues,
     };
 
-    initialRef.current = baseValues;
+    initialRef.current = nextValues
+      ? baseValues
+      : { date: null, description: '', type: '' };
     setValues(baseValues);
     setErrors({});
   }

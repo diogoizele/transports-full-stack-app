@@ -4,7 +4,6 @@ import styled, { useTheme } from 'styled-components/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@react-native-vector-icons/material-icons';
 
-import { loginRequest } from '../api/auth';
 import { useAuthStore } from '../store/authStore';
 
 import TextField from '../components/TextField';
@@ -21,7 +20,7 @@ export default function LoginScreen() {
 
   const disabledButton = [username.trim(), password.trim()].includes('');
 
-  const setToken = useAuthStore(state => state.setToken);
+  const login = useAuthStore(state => state.login);
 
   async function handleLogin() {
     setError(null);
@@ -31,11 +30,7 @@ export default function LoginScreen() {
     }
 
     try {
-      const data = await loginRequest(username, password);
-
-      console.log({ data });
-
-      await setToken(data.token);
+      await login(username, password);
 
       Toast.show({
         type: 'success',

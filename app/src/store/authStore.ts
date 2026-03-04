@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { TokenService, JwtPayload } from '../services/tokenService';
+import { loginRequest } from '../api/auth';
 
 type AuthState = {
   token: string | null;
@@ -8,7 +9,7 @@ type AuthState = {
   fullName: string | null;
   companyId: string | null;
   companyName: string | null;
-  setToken: (token: string) => Promise<void>;
+  login: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   bootstrap: () => Promise<void>;
 };
@@ -21,10 +22,14 @@ export const useAuthStore = create<AuthState>(set => ({
   companyId: null,
   companyName: null,
 
-  setToken: async (token: string) => {
+  login: async (username: string, password: string) => {
     try {
+      const { token } = await loginRequest(username, password);
+
       await TokenService.saveToken(token);
+
       const payload: JwtPayload | null = await TokenService.getUserFromToken();
+
       if (payload) {
         set({
           token,
@@ -36,7 +41,6 @@ export const useAuthStore = create<AuthState>(set => ({
         });
       }
     } catch (e) {
-      console.error('Erro salvando token', e);
       set({
         token: null,
         userId: null,
@@ -45,6 +49,7 @@ export const useAuthStore = create<AuthState>(set => ({
         companyId: null,
         companyName: null,
       });
+      throw e;
     }
   },
 
@@ -63,6 +68,8 @@ export const useAuthStore = create<AuthState>(set => ({
   bootstrap: async () => {
     try {
       const token = await TokenService.getToken();
+      console.log({ token });
+
       if (!token) return;
 
       const payload = await TokenService.getUserFromToken();

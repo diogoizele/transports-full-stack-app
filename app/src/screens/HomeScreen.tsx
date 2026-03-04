@@ -12,7 +12,7 @@ import { useImagePicker } from '../hooks/useImagePicker';
 import { useRecordForm } from '../hooks/useRecordForm';
 import { useRecordStore } from '../store/recordStore';
 import { useSyncStore } from '../store/syncStore';
-import type { RecordDTO, RecordInput } from '../services/recordService';
+import type { RecordDTO } from '../services/recordService';
 import dayjs from 'dayjs';
 import MaterialIcons from '@react-native-vector-icons/material-icons';
 import { ImagePicker } from '../components/ImagePicker';
@@ -20,6 +20,16 @@ import { RecordCardItem } from '../components/RecordCardItem';
 
 export default function HomeScreen() {
   const theme = useTheme();
+
+  const {
+    images,
+    pickFromGallery,
+    takePhoto,
+    removeImage,
+    clearImages,
+    setImages,
+  } = useImagePicker();
+
   const logout = useAuthStore(state => state.logout);
   const fullName = useAuthStore(state => state.fullName);
   const userName = useAuthStore(state => state.username);
@@ -28,8 +38,7 @@ export default function HomeScreen() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  const { records, fetchRecords, addRecord, updateRecord, removeRecord } =
-    useRecordStore();
+  const { records, addRecord, updateRecord, removeRecord } = useRecordStore();
 
   const { isOnline, isSyncing, syncNow } = useSyncStore();
 
@@ -44,7 +53,7 @@ export default function HomeScreen() {
     onSubmit: async formValues => {
       if (!formValues.date) return;
 
-      const input: RecordInput = {
+      const input = {
         type: formValues.type as 'COMPRA' | 'VENDA',
         dateTime: dayjs(formValues.date).format('YYYY-MM-DD HH:mm:ss'),
         description: formValues.description,
@@ -69,9 +78,6 @@ export default function HomeScreen() {
       setIsFormOpen(false);
     },
   });
-
-  const { images, pickFromGallery, takePhoto, removeImage, clearImages } =
-    useImagePicker();
 
   const handleAddImage = () => {
     Alert.alert('Adicionar imagem', 'Escolha uma opção', [
@@ -98,7 +104,9 @@ export default function HomeScreen() {
     date: string;
     description: string;
   }) => {
-    const dto = records.find(r => r.id === record.id);
+    console.log({ record });
+
+    const dto = records.find(({ id }) => id === record.id);
     if (!dto) return;
 
     resetForm({
@@ -107,6 +115,7 @@ export default function HomeScreen() {
       description: dto.description,
     });
     clearImages();
+    setImages(dto.images.map(({ path }) => ({ uri: path })));
     setEditingId(dto.id);
     setIsFormOpen(true);
   };
@@ -125,8 +134,10 @@ export default function HomeScreen() {
   });
 
   useEffect(() => {
-    fetchRecords();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    useSyncStore.getState().syncNow();
+    const unsubscribe = useRecordStore.getState().subscribe();
+
+    return unsubscribe;
   }, []);
 
   return (
@@ -322,7 +333,7 @@ const CompanyText = styled.Text`
   opacity: 0.9;
 `;
 
-const Content = styled.ScrollView`
+const Content = styled.View`
   flex: 1;
 `;
 

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Modal, FlatList } from 'react-native';
+import { Modal, Dimensions, FlatList } from 'react-native';
 import styled, { useTheme } from 'styled-components/native';
 import MaterialIcons from '@react-native-vector-icons/material-icons';
+import Button from '../Button';
 
 export type RecordItemType = {
   id: string;
@@ -24,7 +25,9 @@ export const RecordCardItem: React.FC<RecordCardItemProps> = ({
   onRemove,
 }) => {
   const theme = useTheme();
+  const { width } = Dimensions.get('window');
   const [modalVisible, setModalVisible] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(0);
 
   const handleOpenModal = () => setModalVisible(true);
   const handleCloseModal = () => setModalVisible(false);
@@ -35,7 +38,7 @@ export const RecordCardItem: React.FC<RecordCardItemProps> = ({
         <Content>
           <HeaderRow>
             <TitleContainer>
-              <SyncIndicator synced={record.synced} theme={theme} />
+              <SyncIndicator synced={record.synced} />
               <RecordType>{record.type}</RecordType>
             </TitleContainer>
             <RecordDate>{record.date}</RecordDate>
@@ -76,22 +79,42 @@ export const RecordCardItem: React.FC<RecordCardItemProps> = ({
         animationType="fade"
         onRequestClose={handleCloseModal}
       >
-        <ModalBackdrop onPress={handleCloseModal}>
-          <ModalContent>
+        <ModalBackdrop activeOpacity={1}>
+          <ModalContent activeOpacity={1}>
             <FlatList
               data={record.images || []}
               keyExtractor={(item, index) => `${item.uri}-${index}`}
               horizontal
               pagingEnabled
-              showsHorizontalScrollIndicator={false}
+              // showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ gap: 4 }}
+              onMomentumScrollEnd={event => {
+                console.log('CLICADO');
+                const index = Math.round(
+                  event.nativeEvent.contentOffset.x / (width * 0.8),
+                );
+                setCurrentIndex(index);
+              }}
               renderItem={({ item }) => (
-                <ModalImage source={{ uri: item.uri }} resizeMode="contain" />
+                <CarouselItem style={{ width: width * 0.8 }}>
+                  <ModalImage source={{ uri: item.uri }} resizeMode="contain" />
+                </CarouselItem>
               )}
             />
+
+            {record.images && record.images.length > 1 && (
+              <PaginationContainer>
+                {record.images.map((_, index) => (
+                  <Dot key={index} active={index === currentIndex} />
+                ))}
+              </PaginationContainer>
+            )}
 
             <ModalText>
               <ModalHeader>{record.description}</ModalHeader>
             </ModalText>
+
+            <Button title="Voltar" onPress={handleCloseModal} />
           </ModalContent>
         </ModalBackdrop>
       </Modal>
@@ -103,13 +126,10 @@ const CardTouchable = styled.TouchableOpacity`
   flex-direction: row;
   background-color: ${({ theme }) => theme.colors.surface};
   border-radius: 16px;
-
   height: 72px;
-
   margin-bottom: 12px;
   border: 1px solid ${({ theme }) => theme.colors.border};
   align-items: flex-start;
-
   overflow: hidden;
 `;
 
@@ -117,14 +137,12 @@ const SyncIndicator = styled.View<{ synced: boolean }>`
   width: 16px;
   height: 16px;
   border-radius: 8px;
-
   background-color: ${({ synced, theme }) =>
     synced ? theme.colors.success : theme.colors.warning};
 `;
 
 const Content = styled.View`
   flex: 1;
-
   margin-left: 12px;
   height: 100%;
   padding: 8px 0;
@@ -161,14 +179,12 @@ const RecordDescription = styled.Text`
 
 const IconsContainer = styled.View`
   margin-left: 8px;
-
   height: 100%;
   width: 64px;
 `;
 
 const TouchableAction = styled.TouchableOpacity<{ backgroundColor: string }>`
   background-color: ${({ backgroundColor }) => backgroundColor};
-
   justify-content: center;
   align-items: center;
   flex: 1;
@@ -181,12 +197,39 @@ const ModalBackdrop = styled.TouchableOpacity`
   align-items: center;
 `;
 
-const ModalContent = styled.View`
+const ModalContent = styled.TouchableOpacity`
   width: 90%;
   max-height: 70%;
   background-color: ${({ theme }) => theme.colors.surface};
   border-radius: 16px;
   padding: 16px;
+`;
+
+const CarouselItem = styled.View`
+  justify-content: center;
+  align-items: center;
+`;
+
+const ModalImage = styled.Image`
+  width: 100%;
+  height: 400px;
+
+  border-radius: 8px;
+`;
+
+const PaginationContainer = styled.View`
+  flex-direction: row;
+  justify-content: center;
+  margin-vertical: 8px;
+`;
+
+const Dot = styled.View<{ active: boolean }>`
+  width: 8px;
+  height: 8px;
+  border-radius: 4px;
+  margin: 0 4px;
+  background-color: ${({ active, theme }) =>
+    active ? theme.colors.primary : theme.colors.border};
 `;
 
 const ModalText = styled.View`
@@ -197,10 +240,4 @@ const ModalHeader = styled.Text`
   font-weight: 700;
   margin-bottom: 6px;
   color: ${({ theme }) => theme.colors.text};
-`;
-
-const ModalImage = styled.Image`
-  width: 100%;
-  height: 200px;
-  margin-right: 8px;
 `;

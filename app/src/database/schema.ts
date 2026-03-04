@@ -4,36 +4,10 @@ export const schema = appSchema({
   version: 1,
   tables: [
     tableSchema({
-      name: 'companies',
-      columns: [
-        { name: 'name', type: 'string' },
-
-        { name: 'created_at', type: 'number' },
-        { name: 'updated_at', type: 'number' },
-        { name: 'deleted_at', type: 'number', isOptional: true },
-      ],
-    }),
-
-    tableSchema({
-      name: 'users',
-      columns: [
-        { name: 'full_name', type: 'string' },
-        { name: 'username', type: 'string', isIndexed: true },
-        { name: 'password', type: 'string' },
-
-        { name: 'company_id', type: 'string', isIndexed: true },
-
-        { name: 'created_at', type: 'number' },
-        { name: 'updated_at', type: 'number' },
-        { name: 'deleted_at', type: 'number', isOptional: true },
-      ],
-    }),
-
-    tableSchema({
       name: 'records',
       columns: [
         { name: 'type', type: 'string' },
-        { name: 'date_time', type: 'number' },
+        { name: 'date_time', type: 'string' },
         { name: 'description', type: 'string' },
 
         { name: 'company_id', type: 'string', isIndexed: true },

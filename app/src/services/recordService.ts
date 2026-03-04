@@ -1,7 +1,6 @@
 import { database } from '../database';
 import { RecordModel } from '../database/models/RecordModel';
 import { ImageModel } from '../database/models/ImageModel';
-import { useAuthStore } from '../store/authStore';
 
 export type RecordType = 'COMPRA' | 'VENDA';
 
@@ -14,6 +13,8 @@ export type RecordInput = {
   type: RecordType;
   dateTime: string;
   description: string;
+  companyId: string;
+  userId: string;
   images?: { path: string }[];
 };
 
@@ -31,9 +32,12 @@ export type RecordDTO = {
 async function mapRecordModelToDTO(record: RecordModel): Promise<RecordDTO> {
   const images = (await record.images.fetch()) as ImageModel[];
 
-  const hasPendingUpdate =
-    (record as unknown as { _hasPendingUpdate?: boolean })._hasPendingUpdate ??
-    false;
+  const hasPendingUpdate = record._raw._status !== 'synced';
+
+  // console.log({
+  //   record,
+  //   hasPendingUpdate,
+  // });
 
   return {
     id: record.id,
@@ -53,13 +57,23 @@ export const RecordService = {
    * Lista todos os registros locais (offline first),
    * agregando as imagens relacionadas em um array tipado.
    */
-  getAll: async (): Promise<RecordDTO[]> => {
-    const records = await database.collections
-      .get<RecordModel>('records')
-      .query()
-      .fetch();
+  subscription: (onChange: (records: RecordDTO[]) => void) => {
+    const collection = database.collections.get<RecordModel>('records');
 
-    return Promise.all(records.map(mapRecordModelToDTO));
+    const subscription = collection
+      .query()
+      .observe()
+      .subscribe(async liveData => {
+        const dtoRecords = await Promise.all(liveData.map(mapRecordModelToDTO));
+
+        console.log({ dtoRecords });
+
+        onChange(dtoRecords);
+      });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   },
 
   /**
@@ -70,46 +84,25 @@ export const RecordService = {
   create: async (input: RecordInput): Promise<RecordDTO> => {
     const recordsCollection = database.collections.get<RecordModel>('records');
     const imagesCollection = database.collections.get<ImageModel>('images');
-
-    const { companyId, userId } = useAuthStore.getState();
-
-    console.log({
-      input,
-      companyId,
-      userId,
-    });
-
-    console.log({
-      type: input.type,
-      dateTime: input.dateTime,
-      description: input.description,
-      companyId: companyId,
-      userId: userId,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    });
-
-    const newRecord = await database.action(async () => {
+    const newRecord = await database.write(async () => {
       const createdRecord = await recordsCollection.create(record => {
         record.type = input.type;
         record.dateTime = input.dateTime;
         record.description = input.description;
-        if (companyId) record.companyId = companyId;
-        if (userId) record.userId = userId;
-        // record.createdAt = Date.now();
-        // record.updatedAt = Date.now();
-      });
+        record.companyId = input.companyId;
+        record.userId = input.userId;
 
-      console.log('PAssando por aqui');
+        record.createdAt = Date.now();
+        record.updatedAt = Date.now();
+      });
 
       if (input.images?.length) {
         for (const img of input.images) {
-          // eslint-disable-next-line no-await-in-loop
           await imagesCollection.create(image => {
             image.recordId = createdRecord.id;
             image.path = img.path;
-            // image.createdAt = Date.now();
-            // image.updatedAt = Date.now();
+            image.createdAt = Date.now();
+            image.updatedAt = Date.now();
           });
         }
       }
@@ -132,11 +125,11 @@ export const RecordService = {
       .find(id);
     const imagesCollection = database.collections.get<ImageModel>('images');
 
-    const updatedRecord = await database.action(async () => {
+    const updatedRecord = await database.write(async () => {
       record.type = input.type;
       record.dateTime = input.dateTime;
       record.description = input.description;
-      // record.updatedAt = Date.now();
+      record.updatedAt = Date.now();
 
       const existingImages = (await record.images.fetch()) as ImageModel[];
       const newPaths = input.images?.map(i => i.path) ?? [];
@@ -152,11 +145,11 @@ export const RecordService = {
           const alreadyExists = existingImages.find(e => e.path === img.path);
           if (!alreadyExists) {
             // eslint-disable-next-line no-await-in-loop
-            await imagesCollection.create(i => {
-              i.recordId = record.id;
-              i.path = img.path;
-              // i.createdAt = Date.now();
-              // i.updatedAt = Date.now();
+            await imagesCollection.create(img => {
+              img.recordId = record.id;
+              img.path = img.path;
+              img.createdAt = Date.now();
+              img.updatedAt = Date.now();
             });
           }
         }
@@ -177,7 +170,7 @@ export const RecordService = {
       .get<RecordModel>('records')
       .find(id);
 
-    await database.action(async () => {
+    await database.write(async () => {
       await record.markAsDeleted();
     });
   },

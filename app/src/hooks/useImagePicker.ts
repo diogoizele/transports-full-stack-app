@@ -55,5 +55,6 @@ export function useImagePicker() {
     takePhoto,
     removeImage,
     clearImages,
+    setImages,
   };
 }

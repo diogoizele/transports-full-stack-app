@@ -5,13 +5,21 @@ import {
   type RecordDTO,
   type RecordInput,
 } from '../services/recordService';
+import { useAuthStore } from './authStore';
+
+type RecordData = Pick<
+  RecordInput,
+  'description' | 'dateTime' | 'images' | 'type'
+>;
 
 interface RecordState {
   records: RecordDTO[];
   loading: boolean;
-  fetchRecords: () => Promise<void>;
-  addRecord: (record: RecordInput) => Promise<void>;
-  updateRecord: (id: string, record: RecordInput) => Promise<void>;
+
+  subscribe: () => () => void;
+
+  addRecord: (record: RecordData) => Promise<void>;
+  updateRecord: (id: string, record: RecordData) => Promise<void>;
   removeRecord: (id: string) => Promise<void>;
 }
 
@@ -19,27 +27,35 @@ export const useRecordStore = create<RecordState>(set => ({
   records: [],
   loading: false,
 
-  fetchRecords: async () => {
-    set({ loading: true });
-    const data = await RecordService.getAll();
-    console.log('[FETCH RECORDS]', { data });
-    set({ records: data, loading: false });
+  subscribe: () => {
+    const unsubscribe = RecordService.subscription(records => {
+      set({ records });
+    });
+
+    return unsubscribe;
   },
 
   addRecord: async record => {
-    const newRecord = await RecordService.create(record);
-    set(state => ({ records: [newRecord, ...state.records] }));
+    const { companyId, userId } = useAuthStore.getState();
+
+    if (!companyId || !userId) return;
+
+    await RecordService.create({ ...record, companyId, userId });
   },
 
   updateRecord: async (id, record) => {
-    const updated = await RecordService.update(id, record);
-    set(state => ({
-      records: state.records.map(r => (r.id === id ? updated : r)),
-    }));
+    const { companyId, userId } = useAuthStore.getState();
+
+    if (!companyId || !userId) return;
+
+    await RecordService.update(id, { ...record, companyId, userId });
+    // set(state => ({
+    //   records: state.records.map(r => (r.id === id ? updated : r)),
+    // }));
   },
 
   removeRecord: async id => {
     await RecordService.delete(id);
-    set(state => ({ records: state.records.filter(r => r.id !== id) }));
+    // set(state => ({ records: state.records.filter(r => r.id !== id) }));
   },
 }));

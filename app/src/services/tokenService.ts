@@ -14,16 +14,16 @@ export type JwtPayload = {
 };
 
 export const TokenService = {
-  async saveToken(token: string): Promise<void> {
+  saveToken: async (token: string) => {
     await AsyncStorage.setItem(TOKEN_KEY, token);
   },
 
-  async getToken(): Promise<string | null> {
+  getToken: async () => {
     return await AsyncStorage.getItem(TOKEN_KEY);
   },
 
-  async getUserFromToken(): Promise<JwtPayload | null> {
-    const token = await this.getToken();
+  getUserFromToken: async () => {
+    const token = await TokenService.getToken();
     if (!token) return null;
 
     try {
@@ -41,7 +41,7 @@ export const TokenService = {
     }
   },
 
-  async clearToken(): Promise<void> {
+  clearToken: async () => {
     await AsyncStorage.removeItem(TOKEN_KEY);
   },
 };

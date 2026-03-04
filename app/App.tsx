@@ -14,8 +14,6 @@ import { useBootstrap } from './src/bootstrap/initialize';
 export default function App() {
   const { isReady } = useBootstrap();
 
-  console.log('[APP] - rerender');
-
   return (
     <ThemeProvider theme={theme}>
       <DatabaseProvider database={database}>
