@@ -1,176 +1,120 @@
-import { database } from '../database';
 import { RecordModel } from '../database/models/RecordModel';
 import { ImageModel } from '../database/models/ImageModel';
-
-export type RecordType = 'COMPRA' | 'VENDA';
-
-export type RecordImage = {
-  id: string;
-  path: string;
-};
-
-export type RecordInput = {
-  type: RecordType;
-  dateTime: string;
-  description: string;
-  companyId: string;
-  userId: string;
-  images?: { path: string }[];
-};
+import { database } from '../database';
 
 export type RecordDTO = {
   id: string;
-  type: RecordType;
-  dateTime: Date;
+  type: 'COMPRA' | 'VENDA';
+  dateTime: string;
   description: string;
-
-  images: RecordImage[];
-
   synced: boolean;
+  images: { id: string; path: string }[];
 };
 
-async function mapRecordModelToDTO(record: RecordModel): Promise<RecordDTO> {
-  const images = (await record.images.fetch()) as ImageModel[];
+export type RecordCreateInput = {
+  type: 'COMPRA' | 'VENDA';
+  dateTime: string;
+  description: string;
+  images?: string[];
+};
 
-  const hasPendingUpdate = record._raw._status !== 'synced';
+export type RecordUpdateInput = {
+  type?: 'COMPRA' | 'VENDA';
+  dateTime?: string;
+  description?: string;
+  imagesToAdd?: string[];
+  imagesToDelete?: string[];
+};
 
-  // console.log({
-  //   record,
-  //   hasPendingUpdate,
-  // });
+const toDTO = async (record: RecordModel): Promise<RecordDTO> => {
+  const images = await record.images.fetch();
+  const synced = record._raw._status === 'synced';
 
   return {
     id: record.id,
     type: record.type,
-    dateTime: new Date(record.dateTime),
+    dateTime: record.date_time,
     description: record.description,
-    synced: !hasPendingUpdate,
-    images: images.map(img => ({
+    synced,
+    images: images.map((img: ImageModel) => ({
       id: img.id,
       path: img.path,
     })),
   };
-}
+};
 
 export const RecordService = {
-  /**
-   * Lista todos os registros locais (offline first),
-   * agregando as imagens relacionadas em um array tipado.
-   */
-  subscription: (onChange: (records: RecordDTO[]) => void) => {
-    const collection = database.collections.get<RecordModel>('records');
-
-    const subscription = collection
+  subscription: (callback: (records: RecordDTO[]) => void) => {
+    const subscription = database
+      .get<RecordModel>('records')
       .query()
       .observe()
-      .subscribe(async liveData => {
-        const dtoRecords = await Promise.all(liveData.map(mapRecordModelToDTO));
-
-        console.log({ dtoRecords });
-
-        onChange(dtoRecords);
+      .subscribe(async rows => {
+        const dtos = await Promise.all(rows.map(toDTO));
+        callback(dtos);
       });
 
-    return () => {
-      subscription.unsubscribe();
-    };
+    return () => subscription.unsubscribe();
   },
 
-  /**
-   * Cria um novo registro localmente.
-   * Preenche `companyId` e `userId` a partir do estado de autenticação,
-   * garantindo que o sync para o backend tenha os dados necessários.
-   */
-  create: async (input: RecordInput): Promise<RecordDTO> => {
-    const recordsCollection = database.collections.get<RecordModel>('records');
-    const imagesCollection = database.collections.get<ImageModel>('images');
-    const newRecord = await database.write(async () => {
-      const createdRecord = await recordsCollection.create(record => {
-        record.type = input.type;
-        record.dateTime = input.dateTime;
-        record.description = input.description;
-        record.companyId = input.companyId;
-        record.userId = input.userId;
-
-        record.createdAt = Date.now();
-        record.updatedAt = Date.now();
+  create: async (data: RecordCreateInput) => {
+    await database.write(async () => {
+      const record = await database.get<RecordModel>('records').create(r => {
+        r.type = data.type;
+        r.date_time = data.dateTime;
+        r.description = data.description;
       });
 
-      if (input.images?.length) {
-        for (const img of input.images) {
-          await imagesCollection.create(image => {
-            image.recordId = createdRecord.id;
-            image.path = img.path;
-            image.createdAt = Date.now();
-            image.updatedAt = Date.now();
+      if (data.images?.length) {
+        for (const path of data.images) {
+          await database.get<ImageModel>('images').create(img => {
+            img.record_id = record.id;
+            img.path = path;
           });
         }
       }
-
-      return createdRecord;
     });
-
-    console.log({ newRecord });
-
-    return mapRecordModelToDTO(newRecord);
   },
 
-  /**
-   * Atualiza um registro existente e sincroniza o relacionamento de imagens,
-   * mantendo para o frontend apenas um array simples de imagens.
-   */
-  update: async (id: string, input: RecordInput): Promise<RecordDTO> => {
-    const record = await database.collections
-      .get<RecordModel>('records')
-      .find(id);
-    const imagesCollection = database.collections.get<ImageModel>('images');
+  update: async (id: string, data: RecordUpdateInput) => {
+    console.log({ id, data });
 
-    const updatedRecord = await database.write(async () => {
-      record.type = input.type;
-      record.dateTime = input.dateTime;
-      record.description = input.description;
-      record.updatedAt = Date.now();
+    await database.write(async () => {
+      const record = await database.get<RecordModel>('records').find(id);
 
-      const existingImages = (await record.images.fetch()) as ImageModel[];
-      const newPaths = input.images?.map(i => i.path) ?? [];
-
-      existingImages.forEach(img => {
-        if (!newPaths.includes(img.path)) {
-          img.markAsDeleted();
-        }
+      await record.update(r => {
+        if (data.type) r.type = data.type;
+        if (data.dateTime) r.date_time = data.dateTime;
+        if (data.description) r.description = data.description;
       });
 
-      if (input.images?.length) {
-        for (const img of input.images) {
-          const alreadyExists = existingImages.find(e => e.path === img.path);
-          if (!alreadyExists) {
-            // eslint-disable-next-line no-await-in-loop
-            await imagesCollection.create(img => {
-              img.recordId = record.id;
-              img.path = img.path;
-              img.createdAt = Date.now();
-              img.updatedAt = Date.now();
-            });
-          }
+      if (data.imagesToDelete?.length) {
+        for (const imageId of data.imagesToDelete) {
+          const image = await database.get<ImageModel>('images').find(imageId);
+          await image.markAsDeleted();
         }
       }
 
-      return record;
+      if (data.imagesToAdd?.length) {
+        for (const path of data.imagesToAdd) {
+          await database.get<ImageModel>('images').create(img => {
+            img.record_id = id;
+            img.path = path;
+          });
+        }
+      }
     });
-
-    return mapRecordModelToDTO(updatedRecord);
   },
 
-  /**
-   * Exclui um registro localmente (soft delete no Watermelon),
-   * permitindo que o adapter de sync envie a deleção para o backend.
-   */
-  delete: async (id: string): Promise<void> => {
-    const record = await database.collections
-      .get<RecordModel>('records')
-      .find(id);
-
+  delete: async (id: string) => {
     await database.write(async () => {
+      const record = await database.get<RecordModel>('records').find(id);
+
+      const images = await record.images.fetch();
+      for (const image of images) {
+        await image.markAsDeleted();
+      }
+
       await record.markAsDeleted();
     });
   },

@@ -1,7 +1,8 @@
+// app/src/db/schema.ts
 import { appSchema, tableSchema } from '@nozbe/watermelondb';
 
 export const schema = appSchema({
-  version: 1,
+  version: 2, // bump obrigatório quando muda colunas
   tables: [
     tableSchema({
       name: 'records',
@@ -9,25 +10,13 @@ export const schema = appSchema({
         { name: 'type', type: 'string' },
         { name: 'date_time', type: 'string' },
         { name: 'description', type: 'string' },
-
-        { name: 'company_id', type: 'string', isIndexed: true },
-        { name: 'user_id', type: 'string', isIndexed: true },
-
-        { name: 'created_at', type: 'number' },
-        { name: 'updated_at', type: 'number', isIndexed: true },
-        { name: 'deleted_at', type: 'number', isOptional: true },
       ],
     }),
-
     tableSchema({
       name: 'images',
       columns: [
         { name: 'record_id', type: 'string', isIndexed: true },
         { name: 'path', type: 'string' },
-
-        { name: 'created_at', type: 'number' },
-        { name: 'updated_at', type: 'number', isIndexed: true },
-        { name: 'deleted_at', type: 'number', isOptional: true },
       ],
     }),
   ],

@@ -1,29 +1,25 @@
 import { create } from 'zustand';
+import { RecordService, type RecordDTO } from '../services/recordService';
 
-import {
-  RecordService,
-  type RecordDTO,
-  type RecordInput,
-} from '../services/recordService';
-import { useAuthStore } from './authStore';
+type FormImage = { id?: string; path: string };
 
-type RecordData = Pick<
-  RecordInput,
-  'description' | 'dateTime' | 'images' | 'type'
->;
+type RecordData = {
+  type: 'COMPRA' | 'VENDA';
+  dateTime: string;
+  description: string;
+  images: FormImage[];
+};
 
 interface RecordState {
   records: RecordDTO[];
   loading: boolean;
-
   subscribe: () => () => void;
-
   addRecord: (record: RecordData) => Promise<void>;
   updateRecord: (id: string, record: RecordData) => Promise<void>;
   removeRecord: (id: string) => Promise<void>;
 }
 
-export const useRecordStore = create<RecordState>(set => ({
+export const useRecordStore = create<RecordState>((set, get) => ({
   records: [],
   loading: false,
 
@@ -31,31 +27,43 @@ export const useRecordStore = create<RecordState>(set => ({
     const unsubscribe = RecordService.subscription(records => {
       set({ records });
     });
-
     return unsubscribe;
   },
 
   addRecord: async record => {
-    const { companyId, userId } = useAuthStore.getState();
-
-    if (!companyId || !userId) return;
-
-    await RecordService.create({ ...record, companyId, userId });
+    await RecordService.create({
+      type: record.type,
+      dateTime: record.dateTime,
+      description: record.description,
+      images: record.images.map(img => img.path),
+    });
   },
 
   updateRecord: async (id, record) => {
-    const { companyId, userId } = useAuthStore.getState();
+    const current = get().records.find(r => r.id === id);
 
-    if (!companyId || !userId) return;
+    const currentImageIds = new Set(current?.images.map(img => img.id) ?? []);
+    const incomingImageIds = new Set(
+      record.images.filter(img => img.id).map(img => img.id as string),
+    );
 
-    await RecordService.update(id, { ...record, companyId, userId });
-    // set(state => ({
-    //   records: state.records.map(r => (r.id === id ? updated : r)),
-    // }));
+    const imagesToDelete = [...currentImageIds].filter(
+      imgId => !incomingImageIds.has(imgId),
+    );
+    const imagesToAdd = record.images
+      .filter(img => !img.id)
+      .map(img => img.path);
+
+    await RecordService.update(id, {
+      type: record.type,
+      dateTime: record.dateTime,
+      description: record.description,
+      imagesToAdd,
+      imagesToDelete,
+    });
   },
 
   removeRecord: async id => {
     await RecordService.delete(id);
-    // set(state => ({ records: state.records.filter(r => r.id !== id) }));
   },
 }));

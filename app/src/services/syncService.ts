@@ -1,4 +1,4 @@
-import { SyncDatabaseChangeSet, synchronize } from '@nozbe/watermelondb/sync';
+import { synchronize } from '@nozbe/watermelondb/sync';
 import { database } from '../database';
 import { getSync, postSync } from '../api/sync';
 
@@ -11,17 +11,8 @@ export const SyncService = {
         try {
           await synchronize({
             database,
-            pullChanges: async data => {
-              const response = await getSync(data);
-              // console.log('[pull]', data, response);
-              return response;
-            },
-            pushChanges: async data => {
-              const response = await postSync(data as SyncDatabaseChangeSet);
-              // console.log('[push]', data, response);
-
-              return response;
-            },
+            pullChanges: getSync,
+            pushChanges: postSync,
           });
         } catch (err) {
           console.log(err);

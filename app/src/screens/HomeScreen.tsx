@@ -16,7 +16,7 @@ import type { RecordDTO } from '../services/recordService';
 import dayjs from 'dayjs';
 import MaterialIcons from '@react-native-vector-icons/material-icons';
 import { ImagePicker } from '../components/ImagePicker';
-import { RecordCardItem } from '../components/RecordCardItem';
+import { RecordCardItem, RecordItemType } from '../components/RecordCardItem';
 
 export default function HomeScreen() {
   const theme = useTheme();
@@ -59,7 +59,7 @@ export default function HomeScreen() {
         description: formValues.description,
         images: images
           .filter(img => !!img.uri)
-          .map(img => ({ path: img.uri! })),
+          .map(img => ({ id: img.id, path: img.uri! })),
       };
 
       if (editingId) {
@@ -68,11 +68,7 @@ export default function HomeScreen() {
         await addRecord(input);
       }
 
-      resetForm({
-        type: '',
-        date: null,
-        description: '',
-      });
+      resetForm({ type: '', date: null, description: '' });
       clearImages();
       setEditingId(null);
       setIsFormOpen(false);
@@ -98,24 +94,19 @@ export default function HomeScreen() {
     syncNow();
   };
 
-  const handleEditRecord = (record: {
-    id: string;
-    type: 'COMPRA' | 'VENDA';
-    date: string;
-    description: string;
-  }) => {
-    console.log({ record });
-
+  const handleEditRecord = (record: RecordItemType) => {
     const dto = records.find(({ id }) => id === record.id);
     if (!dto) return;
 
     resetForm({
       type: dto.type,
-      date: dto.dateTime,
+      date: dto.dateTime ? new Date(dto.dateTime) : null,
       description: dto.description,
     });
     clearImages();
-    setImages(dto.images.map(({ path }) => ({ uri: path })));
+
+    // Preserva id para o diff no updateRecord
+    setImages(dto.images.map(img => ({ uri: img.path, id: img.id })));
     setEditingId(dto.id);
     setIsFormOpen(true);
   };
@@ -127,7 +118,7 @@ export default function HomeScreen() {
   const mapRecordToCardItem = (record: RecordDTO) => ({
     id: record.id,
     type: record.type,
-    date: record.dateTime.toLocaleString('pt-BR'),
+    date: record.dateTime,
     description: record.description,
     synced: record.synced,
     images: record.images?.map(img => ({ uri: img.path })) ?? [],
