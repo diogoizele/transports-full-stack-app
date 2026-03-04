@@ -1,10 +1,10 @@
 import { PoolConnection } from "mysql2/promise";
-import { SyncRecord } from "../schemas/sync";
+import { SyncPushRecord } from "../schemas/sync";
 
 export const syncRecordsService = {
   async created(
     conn: PoolConnection,
-    records: SyncRecord[],
+    records: SyncPushRecord[],
     companyId: string,
     userId: string,
   ) {
@@ -32,7 +32,7 @@ export const syncRecordsService = {
 
   async updated(
     conn: PoolConnection,
-    records: SyncRecord[],
+    records: SyncPushRecord[],
     companyId: string,
   ) {
     for (const record of records) {

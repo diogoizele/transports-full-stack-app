@@ -1,11 +1,12 @@
 import fs from "fs";
 import path from "path";
 import { PoolConnection, RowDataPacket } from "mysql2/promise";
-import { SyncImage } from "../schemas/sync";
+
+import { SyncPushImage } from "../schemas/sync";
 import { BUCKET_DIR, isBase64, saveBase64Image } from "../bucket";
 
 export const syncImagesService = {
-  async created(conn: PoolConnection, images: SyncImage[]) {
+  async created(conn: PoolConnection, images: SyncPushImage[]) {
     for (const img of images) {
       const [imageRow] = await conn.query(
         `SELECT id FROM foto_registro WHERE id = ?`,
@@ -29,7 +30,7 @@ export const syncImagesService = {
     }
   },
 
-  async updated(conn: PoolConnection, images: SyncImage[]) {
+  async updated(conn: PoolConnection, images: SyncPushImage[]) {
     for (const img of images) {
       const [existing] = await conn.query<RowDataPacket[]>(
         `SELECT caminho FROM foto_registro WHERE id = ?`,
