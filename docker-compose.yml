@@ -28,7 +28,20 @@ services:
       DB_USER: takehome
       DB_PASSWORD: takehome
       DB_NAME: takehome
-      JWT_SECRET: takehome 
+      JWT_SECRET: takehome
+    depends_on:
+      - mysql
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: takehome_phpmyadmin
+    restart: always
+    ports:
+      - "8080:80"
+    environment:
+      PMA_HOST: mysql
+      PMA_USER: takehome
+      PMA_PASSWORD: takehome
     depends_on:
       - mysql
 
