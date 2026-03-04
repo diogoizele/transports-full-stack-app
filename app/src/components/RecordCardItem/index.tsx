@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Modal, Dimensions, FlatList } from 'react-native';
+import { Modal } from 'react-native';
 import styled, { useTheme } from 'styled-components/native';
 import MaterialIcons from '@react-native-vector-icons/material-icons';
 import Button from '../Button';
@@ -25,11 +25,17 @@ export const RecordCardItem: React.FC<RecordCardItemProps> = ({
   onRemove,
 }) => {
   const theme = useTheme();
-  const { width } = Dimensions.get('window');
   const [modalVisible, setModalVisible] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  const handleOpenModal = () => setModalVisible(true);
+  const images = record.images || [];
+  const hasPrev = currentIndex > 0;
+  const hasNext = currentIndex < images.length - 1;
+
+  const handleOpenModal = () => {
+    setCurrentIndex(0);
+    setModalVisible(true);
+  };
   const handleCloseModal = () => setModalVisible(false);
 
   return (
@@ -81,33 +87,47 @@ export const RecordCardItem: React.FC<RecordCardItemProps> = ({
       >
         <ModalBackdrop activeOpacity={1}>
           <ModalContent activeOpacity={1}>
-            <FlatList
-              data={record.images || []}
-              keyExtractor={(item, index) => `${item.uri}-${index}`}
-              horizontal
-              pagingEnabled
-              // showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ gap: 4 }}
-              onMomentumScrollEnd={event => {
-                console.log('CLICADO');
-                const index = Math.round(
-                  event.nativeEvent.contentOffset.x / (width * 0.8),
-                );
-                setCurrentIndex(index);
-              }}
-              renderItem={({ item }) => (
-                <CarouselItem style={{ width: width * 0.8 }}>
-                  <ModalImage source={{ uri: item.uri }} resizeMode="contain" />
-                </CarouselItem>
-              )}
-            />
+            {images.length > 0 && (
+              <CarouselContainer>
+                <ModalImage
+                  source={{ uri: images[currentIndex].uri }}
+                  resizeMode="contain"
+                />
 
-            {record.images && record.images.length > 1 && (
-              <PaginationContainer>
-                {record.images.map((_, index) => (
-                  <Dot key={index} active={index === currentIndex} />
-                ))}
-              </PaginationContainer>
+                {hasPrev && (
+                  <NavButton
+                    side="left"
+                    onPress={() => setCurrentIndex(i => i - 1)}
+                  >
+                    <MaterialIcons
+                      name="chevron-left"
+                      size={32}
+                      color={theme.colors.white}
+                    />
+                  </NavButton>
+                )}
+
+                {hasNext && (
+                  <NavButton
+                    side="right"
+                    onPress={() => setCurrentIndex(i => i + 1)}
+                  >
+                    <MaterialIcons
+                      name="chevron-right"
+                      size={32}
+                      color={theme.colors.white}
+                    />
+                  </NavButton>
+                )}
+
+                {images.length > 1 && (
+                  <DotsContainer>
+                    {images.map((_, idx) => (
+                      <Dot key={idx} active={idx === currentIndex} />
+                    ))}
+                  </DotsContainer>
+                )}
+              </CarouselContainer>
             )}
 
             <ModalText>
@@ -205,31 +225,48 @@ const ModalContent = styled.TouchableOpacity`
   padding: 16px;
 `;
 
-const CarouselItem = styled.View`
-  justify-content: center;
-  align-items: center;
+const CarouselContainer = styled.View`
+  position: relative;
+  width: 100%;
+  margin-bottom: 12px;
 `;
 
 const ModalImage = styled.Image`
   width: 100%;
   height: 400px;
-
   border-radius: 8px;
 `;
 
-const PaginationContainer = styled.View`
+const NavButton = styled.TouchableOpacity<{ side: 'left' | 'right' }>`
+  position: absolute;
+  top: 50%;
+  ${({ side }) => side}: 8px;
+  margin-top: -24px;
+  width: 48px;
+  height: 48px;
+  border-radius: 24px;
+  background-color: rgba(0, 0, 0, 0.45);
+  justify-content: center;
+  align-items: center;
+`;
+
+const DotsContainer = styled.View`
+  position: absolute;
+  bottom: 10px;
+  left: 0;
+  right: 0;
   flex-direction: row;
   justify-content: center;
-  margin-vertical: 8px;
+  align-items: center;
+  gap: 6px;
 `;
 
 const Dot = styled.View<{ active: boolean }>`
-  width: 8px;
-  height: 8px;
+  width: ${({ active }) => (active ? '8px' : '6px')};
+  height: ${({ active }) => (active ? '8px' : '6px')};
   border-radius: 4px;
-  margin: 0 4px;
-  background-color: ${({ active, theme }) =>
-    active ? theme.colors.primary : theme.colors.border};
+  background-color: ${({ active }) =>
+    active ? 'rgba(255,255,255,1)' : 'rgba(255,255,255,0.45)'};
 `;
 
 const ModalText = styled.View`
