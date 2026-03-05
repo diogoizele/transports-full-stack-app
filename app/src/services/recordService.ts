@@ -1,6 +1,10 @@
 import { RecordModel } from '../database/models/RecordModel';
 import { ImageModel } from '../database/models/ImageModel';
 import { database } from '../database';
+import { switchMap } from '@nozbe/watermelondb/utils/rx';
+import { combineLatest, from } from 'rxjs';
+import { prepareImagesToSync } from '../helpers/image';
+import { Q } from '@nozbe/watermelondb';
 
 export type RecordDTO = {
   id: string;
@@ -27,8 +31,18 @@ export type RecordUpdateInput = {
 };
 
 const toDTO = async (record: RecordModel): Promise<RecordDTO> => {
-  const images = await record.images.fetch();
-  const synced = record._raw._status === 'synced';
+  const allImages = await database
+    .get<ImageModel>('images')
+    .query(Q.where('record_id', record.id))
+    .fetch();
+
+  const images = allImages.filter(
+    (img: ImageModel) => img._raw._status !== 'deleted',
+  );
+
+  const synced =
+    record._raw._status === 'synced' &&
+    allImages.every((img: ImageModel) => img._raw._status === 'synced');
 
   return {
     id: record.id,
@@ -44,15 +58,18 @@ const toDTO = async (record: RecordModel): Promise<RecordDTO> => {
 };
 
 export const RecordService = {
+  refetch: async (): Promise<RecordDTO[]> => {
+    const records = await database.get<RecordModel>('records').query().fetch();
+    return Promise.all(records.map(toDTO));
+  },
+
   subscription: (callback: (records: RecordDTO[]) => void) => {
-    const subscription = database
-      .get<RecordModel>('records')
-      .query()
-      .observe()
-      .subscribe(async rows => {
-        const dtos = await Promise.all(rows.map(toDTO));
-        callback(dtos);
-      });
+    const records$ = database.get<RecordModel>('records').query().observe();
+    const images$ = database.get<ImageModel>('images').query().observe();
+
+    const subscription = combineLatest([records$, images$])
+      .pipe(switchMap(([rows]) => from(Promise.all(rows.map(toDTO)))))
+      .subscribe(callback);
 
     return () => subscription.unsubscribe();
   },
@@ -66,10 +83,12 @@ export const RecordService = {
       });
 
       if (data.images?.length) {
-        for (const path of data.images) {
+        const base64EncodedImages = await prepareImagesToSync(data.images);
+
+        for (const base64 of base64EncodedImages) {
           await database.get<ImageModel>('images').create(img => {
             img.record_id = record.id;
-            img.path = path;
+            img.path = base64;
           });
         }
       }
@@ -77,8 +96,6 @@ export const RecordService = {
   },
 
   update: async (id: string, data: RecordUpdateInput) => {
-    console.log({ id, data });
-
     await database.write(async () => {
       const record = await database.get<RecordModel>('records').find(id);
 
@@ -91,15 +108,18 @@ export const RecordService = {
       if (data.imagesToDelete?.length) {
         for (const imageId of data.imagesToDelete) {
           const image = await database.get<ImageModel>('images').find(imageId);
+
           await image.markAsDeleted();
         }
       }
 
       if (data.imagesToAdd?.length) {
-        for (const path of data.imagesToAdd) {
+        const base64EncodedImages = await prepareImagesToSync(data.imagesToAdd);
+
+        for (const base64 of base64EncodedImages) {
           await database.get<ImageModel>('images').create(img => {
             img.record_id = id;
-            img.path = path;
+            img.path = base64;
           });
         }
       }

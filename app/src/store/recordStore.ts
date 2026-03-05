@@ -13,6 +13,8 @@ type RecordData = {
 interface RecordState {
   records: RecordDTO[];
   loading: boolean;
+
+  setRecords: (records: RecordDTO[]) => void;
   subscribe: () => () => void;
   addRecord: (record: RecordData) => Promise<void>;
   updateRecord: (id: string, record: RecordData) => Promise<void>;
@@ -22,6 +24,8 @@ interface RecordState {
 export const useRecordStore = create<RecordState>((set, get) => ({
   records: [],
   loading: false,
+
+  setRecords: records => set({ records }),
 
   subscribe: () => {
     const unsubscribe = RecordService.subscription(records => {
@@ -37,6 +41,9 @@ export const useRecordStore = create<RecordState>((set, get) => ({
       description: record.description,
       images: record.images.map(img => img.path),
     });
+
+    const added = await RecordService.refetch();
+    set({ records: added });
   },
 
   updateRecord: async (id, record) => {
@@ -61,9 +68,15 @@ export const useRecordStore = create<RecordState>((set, get) => ({
       imagesToAdd,
       imagesToDelete,
     });
+
+    const updated = await RecordService.refetch();
+    set({ records: updated });
   },
 
   removeRecord: async id => {
     await RecordService.delete(id);
+
+    const removed = await RecordService.refetch();
+    set({ records: removed });
   },
 }));

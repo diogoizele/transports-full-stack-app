@@ -94,18 +94,21 @@ export default function HomeScreen() {
     syncNow();
   };
 
-  const handleEditRecord = (record: RecordItemType) => {
-    const dto = records.find(({ id }) => id === record.id);
+  const handleEditRecord = async (record: RecordItemType) => {
+    // await syncNow();
+
+    const dto = useRecordStore
+      .getState()
+      .records.find(({ id }) => id === record.id);
+
     if (!dto) return;
 
     resetForm({
       type: dto.type,
-      date: dto.dateTime ? new Date(dto.dateTime) : null,
+      date: dto.dateTime ? dayjs(dto.dateTime).toDate() : null,
       description: dto.description,
     });
     clearImages();
-
-    // Preserva id para o diff no updateRecord
     setImages(dto.images.map(img => ({ uri: img.path, id: img.id })));
     setEditingId(dto.id);
     setIsFormOpen(true);
@@ -193,6 +196,8 @@ export default function HomeScreen() {
 
               <TextField
                 isTextArea
+                minLength={10}
+                maxLength={300}
                 label="Descrição"
                 value={values.description}
                 onChangeText={text => setValue('description', text)}
@@ -226,7 +231,10 @@ export default function HomeScreen() {
         <ListContainer>
           <RecordsHeaderRow>
             <RecordsTitle>Registros</RecordsTitle>
-            <SyncStatusTouchable onPress={handleManualSync}>
+            <SyncStatusTouchable
+              onPress={handleManualSync}
+              disabled={!isOnline}
+            >
               <MaterialIcons
                 name={isOnline ? 'wifi' : 'wifi-off'}
                 size={18}
@@ -267,8 +275,6 @@ export default function HomeScreen() {
     </Container>
   );
 }
-
-/* styled-components */
 
 const Container = styled.View`
   flex: 1;
@@ -360,7 +366,7 @@ const ImagesRow = styled.ScrollView.attrs({
 const ListContainer = styled.View`
   flex: 1;
   padding: 20px;
-  padding-top: 0;
+  margin-top: 16px;
 `;
 
 const RecordsHeaderRow = styled.View`

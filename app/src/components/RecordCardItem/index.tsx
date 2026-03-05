@@ -3,6 +3,7 @@ import { Modal } from 'react-native';
 import styled, { useTheme } from 'styled-components/native';
 import MaterialIcons from '@react-native-vector-icons/material-icons';
 import Button from '../Button';
+import { formatFriendlyDate } from '../../helpers/date';
 
 export type RecordItemType = {
   id: string;
@@ -47,7 +48,7 @@ export const RecordCardItem: React.FC<RecordCardItemProps> = ({
               <SyncIndicator synced={record.synced} />
               <RecordType>{record.type}</RecordType>
             </TitleContainer>
-            <RecordDate>{record.date}</RecordDate>
+            <RecordDate>{formatFriendlyDate(record.date)}</RecordDate>
           </HeaderRow>
 
           <RecordDescription numberOfLines={1}>
@@ -90,7 +91,7 @@ export const RecordCardItem: React.FC<RecordCardItemProps> = ({
             {images.length > 0 && (
               <CarouselContainer>
                 <ModalImage
-                  source={{ uri: images[currentIndex].uri }}
+                  source={{ uri: images[currentIndex]?.uri }}
                   resizeMode="contain"
                 />
 
@@ -219,7 +220,7 @@ const ModalBackdrop = styled.TouchableOpacity`
 
 const ModalContent = styled.TouchableOpacity`
   width: 90%;
-  max-height: 70%;
+  max-height: 80%;
   background-color: ${({ theme }) => theme.colors.surface};
   border-radius: 16px;
   padding: 16px;

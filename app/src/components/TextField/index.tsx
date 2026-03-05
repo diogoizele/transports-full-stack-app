@@ -7,6 +7,8 @@ interface TextFieldProps extends TextInputProps {
   error?: string;
   disabled?: boolean;
   isTextArea?: boolean;
+  minLength?: number;
+  maxLength?: number;
 }
 
 const TextField: React.FC<TextFieldProps> = ({
@@ -14,9 +16,27 @@ const TextField: React.FC<TextFieldProps> = ({
   error,
   disabled,
   isTextArea,
+  minLength = 0,
+  maxLength,
   ...props
 }) => {
   const [isFocused, setIsFocused] = useState(false);
+  const [charCount, setCharCount] = useState(() => {
+    if (typeof props.value === 'string') return props.value.length;
+    if (typeof props.defaultValue === 'string')
+      return props.defaultValue.length;
+    return 0;
+  });
+
+  const belowMin = minLength > 0 && charCount < minLength;
+  const atMax = maxLength !== undefined && charCount >= maxLength;
+  const showCounter = isTextArea && (maxLength !== undefined || minLength > 0);
+
+  const counterStatus: 'below' | 'at-max' | 'normal' = belowMin
+    ? 'below'
+    : atMax
+    ? 'at-max'
+    : 'normal';
 
   return (
     <Container>
@@ -34,6 +54,11 @@ const TextField: React.FC<TextFieldProps> = ({
         isDisabled={!!disabled}
         isTextArea={!!isTextArea}
         placeholderTextColor="#A0A0A0"
+        maxLength={maxLength}
+        onChangeText={text => {
+          setCharCount(text.length);
+          props.onChangeText?.(text);
+        }}
         onFocus={e => {
           setIsFocused(true);
           props.onFocus?.(e);
@@ -43,6 +68,19 @@ const TextField: React.FC<TextFieldProps> = ({
           props.onBlur?.(e);
         }}
       />
+
+      {showCounter && (
+        <CounterRow>
+          {belowMin && (
+            <MinHint>faltam {minLength - charCount} para o mínimo</MinHint>
+          )}
+          {atMax && <MinHint isAtMax>limite atingido</MinHint>}
+          <CharCount status={counterStatus}>
+            {charCount}
+            {maxLength !== undefined && `/${maxLength}`}
+          </CharCount>
+        </CounterRow>
+      )}
 
       {error && <ErrorText>{error}</ErrorText>}
     </Container>
@@ -105,6 +143,32 @@ const StyledInput = styled.TextInput<InputProps>`
       shadow-offset: 0px 0px;
       elevation: 2;
     `}
+`;
+
+const CounterRow = styled.View`
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 4px;
+  padding-horizontal: 4px;
+`;
+
+const MinHint = styled.Text<{ isAtMax?: boolean }>`
+  font-size: 11px;
+  color: ${({ theme, isAtMax }) =>
+    isAtMax ? theme.colors.error : theme.colors.textSecondary};
+`;
+
+type CharCountStatus = 'below' | 'at-max' | 'normal';
+
+const CharCount = styled.Text<{ status: CharCountStatus }>`
+  font-size: 12px;
+  margin-left: auto;
+  color: ${({ theme, status }) => {
+    if (status === 'below') return theme.colors.error;
+    if (status === 'at-max') return theme.colors.error;
+    return theme.colors.textSecondary;
+  }};
 `;
 
 const ErrorText = styled.Text`

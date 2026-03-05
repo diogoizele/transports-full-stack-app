@@ -1,5 +1,6 @@
 import { PoolConnection } from "mysql2/promise";
 import { SyncPushRecord } from "../schemas/sync";
+import { toMySQLDateTime } from "../helpers/date";
 
 export const syncRecordsService = {
   async created(
@@ -23,7 +24,7 @@ export const syncRecordsService = {
           companyId,
           userId,
           record.type,
-          record.date_time,
+          toMySQLDateTime(record.date_time),
           record.description,
         ],
       );
@@ -42,7 +43,7 @@ export const syncRecordsService = {
          WHERE id = ? AND empresa_id = ?`,
         [
           record.type,
-          record.date_time,
+          toMySQLDateTime(record.date_time),
           record.description,
           record.id,
           companyId,

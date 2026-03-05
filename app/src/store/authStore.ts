@@ -68,7 +68,6 @@ export const useAuthStore = create<AuthState>(set => ({
   bootstrap: async () => {
     try {
       const token = await TokenService.getToken();
-      console.log({ token });
 
       if (!token) return;
 

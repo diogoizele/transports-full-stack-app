@@ -16,11 +16,9 @@ export async function getSync(params: {
   };
 }
 
-export async function postSync({
-  changes,
-}: {
+export async function postSync(data: {
   changes: SyncDatabaseChangeSet;
   lastPulledAt: number;
 }): Promise<void> {
-  await api.post('/sync', { changes });
+  await api.post('/sync', data);
 }

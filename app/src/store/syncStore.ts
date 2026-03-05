@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import { SyncService } from '../services/syncService';
+import { RecordService } from '../services/recordService';
+import { useRecordStore } from './recordStore';
 
 type SyncState = {
   isOnline: boolean;
@@ -19,12 +21,14 @@ export const useSyncStore = create<SyncState>(set => ({
   setOnline: online => set({ isOnline: online }),
 
   syncNow: async () => {
-    console.log('[SYNC NOW] - chamado');
-
     set({ isSyncing: true, lastError: null });
     try {
       await SyncService.sync();
       set({ lastSyncAt: Date.now(), isSyncing: false });
+
+      const records = await RecordService.refetch();
+
+      useRecordStore.getState().setRecords(records);
     } catch (error: any) {
       set({
         isSyncing: false,

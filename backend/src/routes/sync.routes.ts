@@ -28,23 +28,29 @@ syncRoutes.get("/", async (req: Request, res: Response) => {
 
     const baseUrl = `${req.protocol}://${req.get("host")}`;
 
-    const cutoff = new Date(lastPulledAt);
-
-    const [recordsRow] = await pool.query<RecordFromDb[]>(
+    const [records] = await pool.query<
+      Array<RecordFromDb & { updated_at: number; created_at: number }>
+    >(
       `SELECT
-        *
+        *,
+        UNIX_TIMESTAMP(created_at) * 1000 AS created_at_ts,
+        UNIX_TIMESTAMP(updated_at) * 1000 AS updated_at_ts
       FROM
         registro
       WHERE 1=1 
         AND empresa_id = ?
         AND usuario_id = ? 
         AND updated_at > FROM_UNIXTIME(? / 1000)`,
-      [companyId, userId, cutoff],
+      [companyId, userId, lastPulledAt],
     );
 
-    const [imagesRow] = await pool.query<ImageFromDb[]>(
+    const [images] = await pool.query<
+      Array<ImageFromDb & { updated_at: number; created_at: number }>
+    >(
       `SELECT
-        f.*
+        f.*,
+        UNIX_TIMESTAMP(f.created_at) * 1000 AS created_at_ts,
+        UNIX_TIMESTAMP(f.updated_at) * 1000 AS updated_at_ts
       FROM
         foto_registro f
       INNER JOIN
@@ -53,11 +59,8 @@ syncRoutes.get("/", async (req: Request, res: Response) => {
         AND r.empresa_id = ?
         AND r.usuario_id = ?
         AND f.updated_at > FROM_UNIXTIME(? / 1000)`,
-      [companyId, userId, cutoff],
+      [companyId, userId, lastPulledAt],
     );
-
-    const records = recordsRow;
-    const images = imagesRow;
 
     const urlImageResolver = (path: string) =>
       prepareImageUrl(baseUrl, "uploads", path);
@@ -66,20 +69,20 @@ syncRoutes.get("/", async (req: Request, res: Response) => {
       changes: {
         records: {
           created: records
-            .filter((r) => !r.deleted_at && new Date(r.created_at) > cutoff)
+            .filter((r) => !r.deleted_at && r.created_at > lastPulledAt)
             .map(mapRecordDbToApi),
           updated: records
-            .filter((r) => !r.deleted_at && new Date(r.created_at) <= cutoff)
+            .filter((r) => !r.deleted_at && r.created_at <= lastPulledAt)
             .map(mapRecordDbToApi),
           deleted: records.filter((r) => r.deleted_at).map((r) => r.id),
         },
         images: {
           created: images
-            .filter((i) => !i.deleted_at && new Date(i.created_at) > cutoff)
+            .filter((i) => !i.deleted_at && i.created_at > lastPulledAt)
             .map(mapImageDbToApi)
             .map((image) => ({ ...image, path: urlImageResolver(image.path) })),
           updated: images
-            .filter((i) => !i.deleted_at && new Date(i.created_at) <= cutoff)
+            .filter((i) => !i.deleted_at && i.created_at <= lastPulledAt)
             .map(mapImageDbToApi)
             .map((image) => ({ ...image, path: urlImageResolver(image.path) })),
           deleted: images.filter((i) => i.deleted_at).map((i) => i.id),
@@ -87,8 +90,6 @@ syncRoutes.get("/", async (req: Request, res: Response) => {
       },
       timestamp: Date.now(),
     };
-
-    console.log({ response });
 
     SyncPullResponseSchema.parse(response);
 
