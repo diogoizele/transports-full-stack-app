@@ -47,11 +47,6 @@ Serviços disponíveis após o comando:
 
 O banco já é inicializado automaticamente via `backend/database/init.sql`, incluindo as tabelas e os dados iniciais (2 empresas, 2 usuários).
 
-Utilize algum destes para fazer o login:
-
-- **Usuário:** carlos.souza | **Senha:** 123456
-- **Usuário:** mariana.lima | **Senha:** 1234567
-
 ---
 
 ## App React Native
@@ -80,7 +75,15 @@ Para descobrir seu IP local: `ipconfig` (Windows) ou `ifconfig` / `ip a` (macOS/
 
 ```bash
 cd app
+
+npm install --legacy-peer-deps
+
+# OU
+
 yarn
+
+cd ios
+pod install
 ```
 
 ---
@@ -116,10 +119,10 @@ yarn react-native run-android
 
 Definidas no `init.sql`:
 
-| Usuário      | Senha   | Empresa                         |
-| ------------ | ------- | ------------------------------- |
-| carlos.souza | 123456  | Alfa Mais Alimentos Ltd         |
-| mariana.lima | 1234567 | Beta Comandos - Tecnologia Ltda |
+| Usuário      | Senha  | Empresa                         |
+| ------------ | ------ | ------------------------------- |
+| carlos.souza | 123456 | Alfa Mais Alimentos Ltd         |
+| mariana.lima | 654321 | Beta Comandos - Tecnologia Ltda |
 
 > Verifique os valores exatos em `backend/database/init.sql`.
 
