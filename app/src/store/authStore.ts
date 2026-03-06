@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { TokenService, JwtPayload } from '../services/tokenService';
 import { loginRequest } from '../api/auth';
+import { SyncService } from '../services/syncService';
 
 type AuthState = {
   token: string | null;
@@ -25,6 +26,8 @@ export const useAuthStore = create<AuthState>(set => ({
   login: async (username: string, password: string) => {
     try {
       const { token } = await loginRequest(username, password);
+
+      await SyncService.reset();
 
       await TokenService.saveToken(token);
 

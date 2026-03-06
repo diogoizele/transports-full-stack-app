@@ -57,9 +57,10 @@ CREATE TABLE foto_registro (
 
 
 INSERT INTO empresa (id, nome) VALUES
-('111e8400-e29b-41d4-a716-446655440000', 'Alfa Comércio de Alimentos Ltda'),
-('222e8400-e29b-41d4-a716-446655440000', 'Beta Soluções em Tecnologia Ltda');
+('111e8400-e29b-41d4-a716-446655440000', 'Alfa Mais Alimentos Ltda'),
+('222e8400-e29b-41d4-a716-446655440000', 'Beta Comandos - Tecnologia Ltda');
 
 INSERT INTO usuario (id, nome, login, senha, empresa_id) VALUES
 ('aaa11111-e29b-41d4-a716-446655440000', 'Carlos Henrique Souza', 'carlos.souza', '$2b$10$611ar5OKVM0NeNpBZVj9.OmpePmhOe6GcYjOSIiHY.TMFsAmfww2u', '111e8400-e29b-41d4-a716-446655440000'),
-('bbb22222-e29b-41d4-a716-446655440000', 'Mariana Oliveira Lima', 'mariana.lima', '$2b$10$F58L4In31QY67OnjV1MwpO7VeLlP3RqMkdwHeaD/9huhjSYj5Lk.2', '222e8400-e29b-41d4-a716-446655440000');
+('bbb22222-e29b-41d4-a716-446655440000', 'Mariana Oliveira Lima', 'mariana.lima', '$2b$10$F58L4In31QY67OnjV1MwpO7VeLlP3RqMkdwHeaD/9huhjSYj5Lk.2', '222e8400-e29b-41d4-a716-446655440000'),
+('3f7e6c3e-6b9e-4b7f-9a2c-5f8c1d2e7a91', 'Diogo Gabriel Izele', 'diogo.izele', '$2b$10$611ar5OKVM0NeNpBZVj9.OmpePmhOe6GcYjOSIiHY.TMFsAmfww2u', '222e8400-e29b-41d4-a716-446655440000');

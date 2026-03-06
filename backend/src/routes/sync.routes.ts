@@ -13,9 +13,15 @@ import { prepareImageUrl } from "../helpers/image";
 import { syncRecordsService } from "../services/sync-records.service";
 import { syncImagesService } from "../services/sync-images.service";
 
-interface RecordFromDb extends RowDataPacket, DBRegistro {}
+interface RecordFromDb extends RowDataPacket, DBRegistro {
+  created_at_ts: number;
+  updated_at_ts: number;
+}
 
-interface ImageFromDb extends RowDataPacket, DBImagem {}
+interface ImageFromDb extends RowDataPacket, DBImagem {
+  created_at_ts: number;
+  updated_at_ts: number;
+}
 
 export const syncRoutes = Router();
 
@@ -28,9 +34,7 @@ syncRoutes.get("/", async (req: Request, res: Response) => {
 
     const baseUrl = `${req.protocol}://${req.get("host")}`;
 
-    const [records] = await pool.query<
-      Array<RecordFromDb & { updated_at: number; created_at: number }>
-    >(
+    const [records] = await pool.query<Array<RecordFromDb>>(
       `SELECT
         *,
         UNIX_TIMESTAMP(created_at) * 1000 AS created_at_ts,
@@ -44,9 +48,7 @@ syncRoutes.get("/", async (req: Request, res: Response) => {
       [companyId, userId, lastPulledAt],
     );
 
-    const [images] = await pool.query<
-      Array<ImageFromDb & { updated_at: number; created_at: number }>
-    >(
+    const [images] = await pool.query<Array<ImageFromDb>>(
       `SELECT
         f.*,
         UNIX_TIMESTAMP(f.created_at) * 1000 AS created_at_ts,
@@ -69,20 +71,20 @@ syncRoutes.get("/", async (req: Request, res: Response) => {
       changes: {
         records: {
           created: records
-            .filter((r) => !r.deleted_at && r.created_at > lastPulledAt)
+            .filter((r) => !r.deleted_at && r.created_at_ts > lastPulledAt)
             .map(mapRecordDbToApi),
           updated: records
-            .filter((r) => !r.deleted_at && r.created_at <= lastPulledAt)
+            .filter((r) => !r.deleted_at && r.created_at_ts <= lastPulledAt)
             .map(mapRecordDbToApi),
           deleted: records.filter((r) => r.deleted_at).map((r) => r.id),
         },
         images: {
           created: images
-            .filter((i) => !i.deleted_at && i.created_at > lastPulledAt)
+            .filter((i) => !i.deleted_at && i.created_at_ts > lastPulledAt)
             .map(mapImageDbToApi)
             .map((image) => ({ ...image, path: urlImageResolver(image.path) })),
           updated: images
-            .filter((i) => !i.deleted_at && i.created_at <= lastPulledAt)
+            .filter((i) => !i.deleted_at && i.created_at_ts <= lastPulledAt)
             .map(mapImageDbToApi)
             .map((image) => ({ ...image, path: urlImageResolver(image.path) })),
           deleted: images.filter((i) => i.deleted_at).map((i) => i.id),
