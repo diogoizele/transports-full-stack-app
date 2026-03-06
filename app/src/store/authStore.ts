@@ -26,9 +26,9 @@ export const useAuthStore = create<AuthState>(set => ({
     try {
       const { token } = await loginRequest(username, password);
 
-      await TokenService.saveToken(token);
-
       const payload = await TokenService.saveTokenAndResetIfNewUser(token);
+
+      await TokenService.saveToken(token);
 
       if (payload) {
         set({
