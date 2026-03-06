@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { jwtDecode } from 'jwt-decode';
+import { SyncService } from './syncService';
 
 const TOKEN_KEY = '@takehome_token';
 
@@ -39,6 +40,20 @@ export const TokenService = {
     } catch {
       return null;
     }
+  },
+
+  saveTokenAndResetIfNewUser: async (
+    token: string,
+  ): Promise<JwtPayload | null> => {
+    const previousPayload = await TokenService.getUserFromToken();
+    const newPayload = jwtDecode<JwtPayload>(token);
+
+    if (!previousPayload || previousPayload.sub !== newPayload.sub) {
+      await SyncService.reset();
+    }
+
+    await TokenService.saveToken(token);
+    return newPayload;
   },
 
   clearToken: async () => {

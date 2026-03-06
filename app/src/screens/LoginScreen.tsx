@@ -3,13 +3,13 @@ import { StatusBar } from 'react-native';
 import styled, { useTheme } from 'styled-components/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@react-native-vector-icons/material-icons';
+import Toast from 'react-native-toast-message';
+import axios from 'axios';
 
 import { useAuthStore } from '../store/authStore';
 
 import TextField from '../components/TextField';
 import Button from '../components/Button';
-import Toast from 'react-native-toast-message';
-import axios from 'axios';
 
 export default function LoginScreen() {
   const theme = useTheme();

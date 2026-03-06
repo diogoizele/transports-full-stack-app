@@ -1,4 +1,6 @@
 import { create } from 'zustand';
+import { debounce } from 'lodash';
+
 import { SyncService } from '../services/syncService';
 import { RecordService } from '../services/recordService';
 import { useRecordStore } from './recordStore';
@@ -10,9 +12,14 @@ type SyncState = {
   lastError: string | null;
   setOnline: (online: boolean) => void;
   syncNow: () => Promise<void>;
+  queueSync: (reason: string) => void;
+  debouncedSync: () => void;
+  hasUnsyncedData: () => boolean;
 };
 
-export const useSyncStore = create<SyncState>(set => ({
+const syncQueue = new Set<string>();
+
+export const useSyncStore = create<SyncState>((set, get) => ({
   isOnline: false,
   isSyncing: false,
   lastSyncAt: null,
@@ -35,5 +42,23 @@ export const useSyncStore = create<SyncState>(set => ({
         lastError: error?.message ?? 'Erro ao sincronizar',
       });
     }
+  },
+
+  queueSync: (reason: string) => {
+    syncQueue.add(reason);
+    get().debouncedSync();
+  },
+
+  debouncedSync: debounce(() => {
+    const { isOnline, isSyncing } = get();
+    if (isOnline && !isSyncing) {
+      syncQueue.clear();
+      get().syncNow();
+    }
+  }, 2000),
+
+  hasUnsyncedData: () => {
+    const records = useRecordStore.getState().records;
+    return records.some(r => !r.synced);
   },
 }));

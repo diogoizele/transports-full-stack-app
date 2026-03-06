@@ -16,7 +16,7 @@ export type RecordItemType = {
 
 interface RecordCardItemProps {
   record: RecordItemType;
-  onEdit?: (record: RecordItemType) => void;
+  onEdit?: (record: RecordItemType, shouldOpenImgPicker?: boolean) => void;
   onRemove?: (record: RecordItemType) => void;
 }
 
@@ -88,7 +88,7 @@ export const RecordCardItem: React.FC<RecordCardItemProps> = ({
       >
         <ModalBackdrop activeOpacity={1}>
           <ModalContent activeOpacity={1}>
-            {images.length > 0 && (
+            {images.length > 0 ? (
               <CarouselContainer>
                 <ModalImage
                   source={{ uri: images[currentIndex]?.uri }}
@@ -129,13 +129,31 @@ export const RecordCardItem: React.FC<RecordCardItemProps> = ({
                   </DotsContainer>
                 )}
               </CarouselContainer>
+            ) : (
+              <ImagePlaceholder
+                onPress={() => {
+                  handleCloseModal();
+                  onEdit?.(record, true);
+                }}
+              >
+                <MaterialIcons
+                  name="add-photo-alternate"
+                  size={40}
+                  color="#9E9E9E"
+                />
+                <ImagePlaceholderText>Sem imagem</ImagePlaceholderText>
+                <ImagePlaceholderHint>
+                  Toque para adicionar
+                </ImagePlaceholderHint>
+              </ImagePlaceholder>
             )}
 
             <ModalText>
               <ModalHeader>{record.description}</ModalHeader>
             </ModalText>
-
-            <Button title="Voltar" onPress={handleCloseModal} />
+            <ActionContainer>
+              <Button title="Voltar" onPress={handleCloseModal} />
+            </ActionContainer>
           </ModalContent>
         </ModalBackdrop>
       </Modal>
@@ -220,6 +238,7 @@ const ModalBackdrop = styled.TouchableOpacity`
 
 const ModalContent = styled.TouchableOpacity`
   width: 90%;
+  min-height: 50%;
   max-height: 80%;
   background-color: ${({ theme }) => theme.colors.surface};
   border-radius: 16px;
@@ -271,11 +290,40 @@ const Dot = styled.View<{ active: boolean }>`
 `;
 
 const ModalText = styled.View`
-  margin-bottom: 12px;
+  margin-bottom: 4px;
 `;
 
 const ModalHeader = styled.Text`
   font-weight: 700;
   margin-bottom: 6px;
   color: ${({ theme }) => theme.colors.text};
+`;
+
+const ImagePlaceholder = styled.TouchableOpacity`
+  width: 100%;
+  height: 200px;
+  border-radius: 8px;
+  border-width: 2px;
+  border-style: dashed;
+  border-color: #9e9e9e;
+  background-color: #f5f5f5;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 12px;
+  gap: 6px;
+`;
+
+const ImagePlaceholderText = styled.Text`
+  font-size: 15px;
+  font-weight: 600;
+  color: #9e9e9e;
+`;
+
+const ImagePlaceholderHint = styled.Text`
+  font-size: 12px;
+  color: #bdbdbd;
+`;
+
+const ActionContainer = styled.View`
+  margin-top: auto;
 `;

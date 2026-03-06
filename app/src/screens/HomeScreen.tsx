@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Alert, FlatList, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import styled, { useTheme } from 'styled-components/native';
+import dayjs from 'dayjs';
+import MaterialIcons from '@react-native-vector-icons/material-icons';
 
 import Button from '../components/Button';
 import TextField from '../components/TextField';
@@ -13,10 +15,9 @@ import { useRecordForm } from '../hooks/useRecordForm';
 import { useRecordStore } from '../store/recordStore';
 import { useSyncStore } from '../store/syncStore';
 import type { RecordDTO } from '../services/recordService';
-import dayjs from 'dayjs';
-import MaterialIcons from '@react-native-vector-icons/material-icons';
 import { ImagePicker } from '../components/ImagePicker';
 import { RecordCardItem, RecordItemType } from '../components/RecordCardItem';
+import Toast from 'react-native-toast-message';
 
 export default function HomeScreen() {
   const theme = useTheme();
@@ -91,10 +92,23 @@ export default function HomeScreen() {
   };
 
   const handleManualSync = () => {
+    if (!isOnline) {
+      Toast.show({
+        type: 'error',
+        position: 'bottom',
+        text1: 'Sem conexão com a internet',
+        text2: 'Conecte-se a uma rede para sincronizar os dados.',
+      });
+      return;
+    }
+
     syncNow();
   };
 
-  const handleEditRecord = async (record: RecordItemType) => {
+  const handleEditRecord = async (
+    record: RecordItemType,
+    shouldOpenImgPicker: boolean = false,
+  ) => {
     // await syncNow();
 
     const dto = useRecordStore
@@ -112,6 +126,10 @@ export default function HomeScreen() {
     setImages(dto.images.map(img => ({ uri: img.path, id: img.id })));
     setEditingId(dto.id);
     setIsFormOpen(true);
+
+    if (shouldOpenImgPicker) {
+      handleAddImage();
+    }
   };
 
   const handleRemoveRecord = (record: { id: string }) => {
@@ -231,10 +249,7 @@ export default function HomeScreen() {
         <ListContainer>
           <RecordsHeaderRow>
             <RecordsTitle>Registros</RecordsTitle>
-            <SyncStatusTouchable
-              onPress={handleManualSync}
-              disabled={!isOnline}
-            >
+            <SyncStatusTouchable onPress={handleManualSync}>
               <MaterialIcons
                 name={isOnline ? 'wifi' : 'wifi-off'}
                 size={18}

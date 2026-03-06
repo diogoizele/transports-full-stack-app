@@ -16,6 +16,7 @@
         "date-fns": "^4.1.0",
         "dayjs": "^1.11.19",
         "jwt-decode": "^4.0.0",
+        "lodash": "^4.17.23",
         "react": "19.2.3",
         "react-native": "0.84.1",
         "react-native-config": "^1.6.1",
@@ -43,6 +44,7 @@
         "@react-native/metro-config": "0.84.1",
         "@react-native/typescript-config": "0.84.1",
         "@types/jest": "^29.5.13",
+        "@types/lodash": "^4.17.24",
         "@types/react": "^19.2.0",
         "@types/react-test-renderer": "^19.1.0",
         "@types/styled-components-react-native": "^5.2.5",
@@ -511,6 +513,8 @@
     "@types/istanbul-reports": ["@types/istanbul-reports@3.0.4", "", { "dependencies": { "@types/istanbul-lib-report": "*" } }, "sha512-pk2B1NWalF9toCRu6gjBzR69syFjP4Od8WRAX+0mmf9lAjCRicLOWc+ZrxZHx/0XRjotgkF9t6iaMJ+aXcOdZQ=="],
 
     "@types/jest": ["@types/jest@29.5.14", "", { "dependencies": { "expect": "^29.0.0", "pretty-format": "^29.0.0" } }, "sha512-ZN+4sdnLUbo8EVvVc2ao0GFW6oVrQRPn4K2lglySj7APvSrgzxHiNNK99us4WDMi57xxA2yggblIAMNhXOotLQ=="],
+
+    "@types/lodash": ["@types/lodash@4.17.24", "", {}, "sha512-gIW7lQLZbue7lRSWEFql49QJJWThrTFFeIMJdp3eH4tKoxm1OvEPg02rm4wCCSHS0cL3/Fizimb35b7k8atwsQ=="],
 
     "@types/node": ["@types/node@25.3.3", "", { "dependencies": { "undici-types": "~7.18.0" } }, "sha512-DpzbrH7wIcBaJibpKo9nnSQL0MTRdnWttGyE5haGwK86xgMOkFLp7vEyfQPGLOJh5wNYiJ3V9PmUMDhV9u8kkQ=="],
 

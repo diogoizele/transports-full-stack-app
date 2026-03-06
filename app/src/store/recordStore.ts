@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { RecordService, type RecordDTO } from '../services/recordService';
+import { useSyncStore } from './syncStore';
 
 type FormImage = { id?: string; path: string };
 
@@ -44,6 +45,8 @@ export const useRecordStore = create<RecordState>((set, get) => ({
 
     const added = await RecordService.refetch();
     set({ records: added });
+
+    useSyncStore.getState().queueSync('record-added');
   },
 
   updateRecord: async (id, record) => {
@@ -71,6 +74,8 @@ export const useRecordStore = create<RecordState>((set, get) => ({
 
     const updated = await RecordService.refetch();
     set({ records: updated });
+
+    useSyncStore.getState().queueSync('record-updated');
   },
 
   removeRecord: async id => {
@@ -78,5 +83,7 @@ export const useRecordStore = create<RecordState>((set, get) => ({
 
     const removed = await RecordService.refetch();
     set({ records: removed });
+
+    useSyncStore.getState().queueSync('record-removed');
   },
 }));
