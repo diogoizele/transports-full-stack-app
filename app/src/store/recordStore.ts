@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { RecordService, type RecordDTO } from '../services/recordService';
 import { useSyncStore } from './syncStore';
+import { useAuthStore } from './authStore';
 
 type FormImage = { id?: string; path: string };
 
@@ -36,7 +37,11 @@ export const useRecordStore = create<RecordState>((set, get) => ({
   },
 
   addRecord: async record => {
-    await RecordService.create({
+    const userId = useAuthStore.getState().userId;
+
+    if (!userId) return;
+
+    await RecordService.create(userId, {
       type: record.type,
       dateTime: record.dateTime,
       description: record.description,

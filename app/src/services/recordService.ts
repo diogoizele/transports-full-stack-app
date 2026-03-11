@@ -43,8 +43,6 @@ const toDTO = async (record: RecordModel): Promise<RecordDTO> => {
 
   const user = await record.user.fetch();
 
-  console.log({ user });
-
   const images = allImages.filter(
     (img: ImageModel) => img._raw._status !== 'deleted',
   );
@@ -88,12 +86,13 @@ export const RecordService = {
     return () => subscription.unsubscribe();
   },
 
-  create: async (data: RecordCreateInput) => {
+  create: async (userId: string, data: RecordCreateInput) => {
     await database.write(async () => {
       const record = await database.get<RecordModel>('records').create(r => {
         r.type = data.type;
         r.date_time = data.dateTime;
         r.description = data.description;
+        r.user_id = userId;
       });
 
       if (data.images?.length) {

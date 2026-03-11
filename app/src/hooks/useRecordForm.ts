@@ -66,6 +66,8 @@ export function useRecordForm({
       date: values.date as Date,
       description: values.description.trim(),
     });
+
+    resetForm();
   }
 
   function resetForm(nextValues?: Partial<RecordFormValues>) {
