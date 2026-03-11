@@ -28,8 +28,6 @@ export const useAuthStore = create<AuthState>(set => ({
 
       const payload = await TokenService.saveTokenAndResetIfNewUser(token);
 
-      await TokenService.saveToken(token);
-
       if (payload) {
         set({
           token,
