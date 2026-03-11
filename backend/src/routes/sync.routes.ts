@@ -2,13 +2,17 @@ import { Router, Request, Response } from "express";
 import { RowDataPacket } from "mysql2";
 
 import { pool } from "../db/connection";
-import { DBImagem, DBRegistro } from "../db/interfaces";
+import { DBImagem, DBRegistro, DBUsuario } from "../db/interfaces";
 import {
   SyncPullResponse,
   SyncPullResponseSchema,
   SyncPushRequestSchema,
 } from "../schemas/sync";
-import { mapImageDbToApi, mapRecordDbToApi } from "../mappers/sync.mapper";
+import {
+  mapImageDbToApi,
+  mapRecordDbToApi,
+  mapUserDbToApi,
+} from "../mappers/sync.mapper";
 import { prepareImageUrl } from "../helpers/image";
 import { syncRecordsService } from "../services/sync-records.service";
 import { syncImagesService } from "../services/sync-images.service";
@@ -23,6 +27,11 @@ interface ImageFromDb extends RowDataPacket, DBImagem {
   updated_at_ts: number;
 }
 
+interface UserFromDb extends RowDataPacket, DBUsuario {
+  created_at_ts: number;
+  updated_at_ts: number;
+}
+
 export const syncRoutes = Router();
 
 syncRoutes.get("/", async (req: Request, res: Response) => {
@@ -30,22 +39,23 @@ syncRoutes.get("/", async (req: Request, res: Response) => {
     const lastPulledAt = Number(req.query.lastPulledAt) || 0;
 
     const companyId = req.user?.companyId;
-    const userId = req.user?.id;
 
     const baseUrl = `${req.protocol}://${req.get("host")}`;
 
     const [records] = await pool.query<Array<RecordFromDb>>(
       `SELECT
-        *,
-        UNIX_TIMESTAMP(created_at) * 1000 AS created_at_ts,
-        UNIX_TIMESTAMP(updated_at) * 1000 AS updated_at_ts
+        r.*,
+        u.id as id_usuario,
+        UNIX_TIMESTAMP(r.created_at) * 1000 AS created_at_ts,
+        UNIX_TIMESTAMP(r.updated_at) * 1000 AS updated_at_ts
       FROM
-        registro
+        registro r
+      INNER JOIN
+        usuario u on u.id = r.usuario_id
       WHERE 1=1 
-        AND empresa_id = ?
-        AND usuario_id = ? 
-        AND updated_at > FROM_UNIXTIME(? / 1000)`,
-      [companyId, userId, lastPulledAt],
+        AND r.empresa_id = ?
+        AND r.updated_at > FROM_UNIXTIME(? / 1000)`,
+      [companyId, lastPulledAt],
     );
 
     const [images] = await pool.query<Array<ImageFromDb>>(
@@ -59,9 +69,22 @@ syncRoutes.get("/", async (req: Request, res: Response) => {
         registro r ON r.id = f.registro_id
       WHERE 1=1
         AND r.empresa_id = ?
-        AND r.usuario_id = ?
         AND f.updated_at > FROM_UNIXTIME(? / 1000)`,
-      [companyId, userId, lastPulledAt],
+      [companyId, lastPulledAt],
+    );
+
+    const [users] = await pool.query<Array<UserFromDb>>(
+      `SELECT
+        u.*,
+        UNIX_TIMESTAMP(u.created_at) * 1000 AS created_at_ts,
+        UNIX_TIMESTAMP(u.updated_at) * 1000 AS updated_at_ts
+      FROM
+        usuario u
+      WHERE 1=1
+        AND u.empresa_id = ?
+        AND u.updated_at > FROM_UNIXTIME(? / 1000)
+      `,
+      [companyId, lastPulledAt],
     );
 
     const urlImageResolver = (path: string) =>
@@ -88,6 +111,15 @@ syncRoutes.get("/", async (req: Request, res: Response) => {
             .map(mapImageDbToApi)
             .map((image) => ({ ...image, path: urlImageResolver(image.path) })),
           deleted: images.filter((i) => i.deleted_at).map((i) => i.id),
+        },
+        users: {
+          created: users
+            .filter((u) => !u.deleted_at && u.created_at_ts > lastPulledAt)
+            .map(mapUserDbToApi),
+          updated: users
+            .filter((u) => !u.deleted_at && u.created_at_ts <= lastPulledAt)
+            .map(mapUserDbToApi),
+          deleted: users.filter((u) => u.deleted_at).map((u) => u.id),
         },
       },
       timestamp: Date.now(),
@@ -120,8 +152,18 @@ syncRoutes.post("/", async (req: Request, res: Response) => {
         companyId!,
         userId!,
       );
-      await syncRecordsService.updated(conn, records.updated, companyId!);
-      await syncRecordsService.deleted(conn, records.deleted, companyId!);
+      await syncRecordsService.updated(
+        conn,
+        records.updated,
+        companyId!,
+        userId!,
+      );
+      await syncRecordsService.deleted(
+        conn,
+        records.deleted,
+        companyId!,
+        userId!,
+      );
 
       await syncImagesService.created(conn, images.created);
       await syncImagesService.updated(conn, images.updated);
@@ -137,6 +179,25 @@ syncRoutes.post("/", async (req: Request, res: Response) => {
     }
   } catch (error) {
     console.error("[sync/push]", error);
+
+    if (error instanceof Error) {
+      if (error.message.startsWith("record_not_found:")) {
+        const recordId = error.message.split(":")[1];
+        return res.status(404).json({
+          error: "record_not_found",
+          record_id: recordId,
+        });
+      }
+
+      if (error.message.startsWith("unauthorized_record_access:")) {
+        const recordId = error.message.split(":")[1];
+        return res.status(403).json({
+          error: "unauthorized_record_access",
+          record_id: recordId,
+        });
+      }
+    }
+
     res.status(500).json({ error: "sync_push_failed" });
   }
 });

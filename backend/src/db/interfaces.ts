@@ -4,6 +4,8 @@ export interface DBRegistro {
   data_hora: Date | string;
   descricao: string;
 
+  id_usuario: string;
+
   updated_at: Date | string;
   created_at: Date | string;
   deleted_at: Date | string;
@@ -13,6 +15,16 @@ export interface DBImagem {
   id: string;
   registro_id: string;
   caminho: string;
+
+  updated_at: Date | string;
+  created_at: Date | string;
+  deleted_at: Date | string;
+}
+
+export interface DBUsuario {
+  id: string;
+  login: string;
+  nome: string;
 
   updated_at: Date | string;
   created_at: Date | string;
