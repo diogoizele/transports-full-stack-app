@@ -13,6 +13,11 @@ export type RecordDTO = {
   description: string;
   synced: boolean;
   images: { id: string; path: string }[];
+  user: {
+    username: string;
+    fullName: string;
+    id: string;
+  };
 };
 
 export type RecordCreateInput = {
@@ -36,6 +41,10 @@ const toDTO = async (record: RecordModel): Promise<RecordDTO> => {
     .query(Q.where('record_id', record.id))
     .fetch();
 
+  const user = await record.user.fetch();
+
+  console.log({ user });
+
   const images = allImages.filter(
     (img: ImageModel) => img._raw._status !== 'deleted',
   );
@@ -54,6 +63,11 @@ const toDTO = async (record: RecordModel): Promise<RecordDTO> => {
       id: img.id,
       path: img.path,
     })),
+    user: {
+      id: user.id,
+      username: user.username,
+      fullName: user.full_name,
+    },
   };
 };
 

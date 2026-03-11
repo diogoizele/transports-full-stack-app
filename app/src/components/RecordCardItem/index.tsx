@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Modal } from 'react-native';
+import { GestureResponderEvent, Modal } from 'react-native';
 import styled, { useTheme } from 'styled-components/native';
 import MaterialIcons from '@react-native-vector-icons/material-icons';
 import Button from '../Button';
@@ -7,6 +7,7 @@ import { formatFriendlyDate } from '../../helpers/date';
 
 export type RecordItemType = {
   id: string;
+  user: { fullName: string; username: string; id: string };
   type: 'COMPRA' | 'VENDA';
   date: string;
   description: string;
@@ -16,12 +17,14 @@ export type RecordItemType = {
 
 interface RecordCardItemProps {
   record: RecordItemType;
+  currentUserId: string | null;
   onEdit?: (record: RecordItemType, shouldOpenImgPicker?: boolean) => void;
   onRemove?: (record: RecordItemType) => void;
 }
 
 export const RecordCardItem: React.FC<RecordCardItemProps> = ({
   record,
+  currentUserId,
   onEdit,
   onRemove,
 }) => {
@@ -29,6 +32,7 @@ export const RecordCardItem: React.FC<RecordCardItemProps> = ({
   const [modalVisible, setModalVisible] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
 
+  const canEdit = record.user.id === currentUserId;
   const images = record.images || [];
   const hasPrev = currentIndex > 0;
   const hasNext = currentIndex < images.length - 1;
@@ -38,6 +42,20 @@ export const RecordCardItem: React.FC<RecordCardItemProps> = ({
     setModalVisible(true);
   };
   const handleCloseModal = () => setModalVisible(false);
+
+  const handleEdit = (event: GestureResponderEvent) => {
+    event.stopPropagation();
+    if (canEdit) {
+      onEdit?.(record);
+    }
+  };
+
+  const handleRemove = (event: GestureResponderEvent) => {
+    event.stopPropagation();
+    if (canEdit) {
+      onRemove?.(record);
+    }
+  };
 
   return (
     <>
@@ -51,6 +69,7 @@ export const RecordCardItem: React.FC<RecordCardItemProps> = ({
             <RecordDate>{formatFriendlyDate(record.date)}</RecordDate>
           </HeaderRow>
 
+          <RecordOwner>@{record.user.username}</RecordOwner>
           <RecordDescription numberOfLines={1}>
             {record.description}
           </RecordDescription>
@@ -60,20 +79,28 @@ export const RecordCardItem: React.FC<RecordCardItemProps> = ({
           {onEdit && (
             <TouchableAction
               backgroundColor={theme.colors.primary}
-              onPress={() => onEdit(record)}
+              onPress={handleEdit}
+              disabled={!canEdit}
+              activeOpacity={canEdit ? 0.2 : 1}
             >
-              <MaterialIcons name="edit" size={22} color={theme.colors.white} />
+              <MaterialIcons
+                name="edit"
+                size={22}
+                color={canEdit ? theme.colors.white : 'rgba(255,255,255,0.9)'}
+              />
             </TouchableAction>
           )}
           {onRemove && (
             <TouchableAction
               backgroundColor={theme.colors.error}
-              onPress={() => onRemove(record)}
+              onPress={handleRemove}
+              disabled={!canEdit}
+              activeOpacity={canEdit ? 0.2 : 1}
             >
               <MaterialIcons
                 name="delete"
                 size={22}
-                color={theme.colors.white}
+                color={canEdit ? theme.colors.white : 'rgba(255,255,255,0.9)'}
               />
             </TouchableAction>
           )}
@@ -132,19 +159,31 @@ export const RecordCardItem: React.FC<RecordCardItemProps> = ({
             ) : (
               <ImagePlaceholder
                 onPress={() => {
-                  handleCloseModal();
-                  onEdit?.(record, true);
+                  if (canEdit) {
+                    handleCloseModal();
+                    onEdit?.(record, true);
+                  }
                 }}
+                disabled={!canEdit}
+                activeOpacity={canEdit ? 0.7 : 1}
               >
                 <MaterialIcons
                   name="add-photo-alternate"
                   size={40}
-                  color="#9E9E9E"
+                  color={canEdit ? '#9E9E9E' : '#E0E0E0'}
                 />
-                <ImagePlaceholderText>Sem imagem</ImagePlaceholderText>
-                <ImagePlaceholderHint>
-                  Toque para adicionar
-                </ImagePlaceholderHint>
+                <ImagePlaceholderText disabled={!canEdit}>
+                  Sem imagem
+                </ImagePlaceholderText>
+                {canEdit ? (
+                  <ImagePlaceholderHint>
+                    Toque para adicionar
+                  </ImagePlaceholderHint>
+                ) : (
+                  <ImagePlaceholderHint>
+                    Somente visualização
+                  </ImagePlaceholderHint>
+                )}
               </ImagePlaceholder>
             )}
 
@@ -165,7 +204,7 @@ const CardTouchable = styled.TouchableOpacity`
   flex-direction: row;
   background-color: ${({ theme }) => theme.colors.surface};
   border-radius: 16px;
-  height: 72px;
+  height: 100px;
   margin-bottom: 12px;
   border: 1px solid ${({ theme }) => theme.colors.border};
   align-items: flex-start;
@@ -185,7 +224,7 @@ const Content = styled.View`
   margin-left: 12px;
   height: 100%;
   padding: 8px 0;
-  justify-content: center;
+  justify-content: space-evenly;
 `;
 
 const HeaderRow = styled.View`
@@ -206,6 +245,12 @@ const RecordType = styled.Text`
   color: ${({ theme }) => theme.colors.text};
 `;
 
+const RecordOwner = styled.Text`
+  font-size: 14px;
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors.textSecondary};
+`;
+
 const RecordDate = styled.Text`
   font-size: 12px;
   color: ${({ theme }) => theme.colors.textSecondary};
@@ -222,8 +267,12 @@ const IconsContainer = styled.View`
   width: 64px;
 `;
 
-const TouchableAction = styled.TouchableOpacity<{ backgroundColor: string }>`
-  background-color: ${({ backgroundColor }) => backgroundColor};
+const TouchableAction = styled.TouchableOpacity<{
+  backgroundColor: string;
+  disabled?: boolean;
+}>`
+  background-color: ${({ backgroundColor, disabled }) =>
+    disabled ? `${backgroundColor}66` : backgroundColor};
   justify-content: center;
   align-items: center;
   flex: 1;
@@ -299,24 +348,24 @@ const ModalHeader = styled.Text`
   color: ${({ theme }) => theme.colors.text};
 `;
 
-const ImagePlaceholder = styled.TouchableOpacity`
+const ImagePlaceholder = styled.TouchableOpacity<{ disabled?: boolean }>`
   width: 100%;
   height: 200px;
   border-radius: 8px;
   border-width: 2px;
   border-style: dashed;
-  border-color: #9e9e9e;
-  background-color: #f5f5f5;
+  border-color: ${({ disabled }) => (disabled ? '#E0E0E0' : '#9e9e9e')};
+  background-color: ${({ disabled }) => (disabled ? '#FAFAFA' : '#f5f5f5')};
   justify-content: center;
   align-items: center;
   margin-bottom: 12px;
   gap: 6px;
 `;
 
-const ImagePlaceholderText = styled.Text`
+const ImagePlaceholderText = styled.Text<{ disabled?: boolean }>`
   font-size: 15px;
   font-weight: 600;
-  color: #9e9e9e;
+  color: ${({ disabled }) => (disabled ? '#BDBDBD' : '#9e9e9e')};
 `;
 
 const ImagePlaceholderHint = styled.Text`

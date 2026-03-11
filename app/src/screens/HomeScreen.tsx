@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import styled, { useTheme } from 'styled-components/native';
 import dayjs from 'dayjs';
 import MaterialIcons from '@react-native-vector-icons/material-icons';
+import Toast from 'react-native-toast-message';
 
 import Button from '../components/Button';
 import TextField from '../components/TextField';
@@ -17,7 +18,6 @@ import { useSyncStore } from '../store/syncStore';
 import type { RecordDTO } from '../services/recordService';
 import { ImagePicker } from '../components/ImagePicker';
 import { RecordCardItem, RecordItemType } from '../components/RecordCardItem';
-import Toast from 'react-native-toast-message';
 
 export default function HomeScreen() {
   const theme = useTheme();
@@ -34,6 +34,7 @@ export default function HomeScreen() {
   const logout = useAuthStore(state => state.logout);
   const fullName = useAuthStore(state => state.fullName);
   const userName = useAuthStore(state => state.username);
+  const userId = useAuthStore(state => state.userId);
   const companyName = useAuthStore(state => state.companyName);
 
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -41,7 +42,8 @@ export default function HomeScreen() {
 
   const { records, addRecord, updateRecord, removeRecord } = useRecordStore();
 
-  const { isOnline, isSyncing, syncNow } = useSyncStore();
+  const { isOnline, isSyncing, lastError, syncNow, resetLocalData } =
+    useSyncStore();
 
   const {
     values,
@@ -91,7 +93,7 @@ export default function HomeScreen() {
     setIsFormOpen(prev => !prev);
   };
 
-  const handleManualSync = () => {
+  const handleManualSync = async () => {
     if (!isOnline) {
       Toast.show({
         type: 'error',
@@ -101,16 +103,39 @@ export default function HomeScreen() {
       });
       return;
     }
+    try {
+      await syncNow();
+    } catch (err: any) {
+      if ('message' in err) {
+        Toast.show({
+          type: 'error',
+          position: 'bottom',
+          text1: 'Erro ao sincronizar!',
+          text2: err.message,
+        });
+      }
+    }
+  };
 
-    syncNow();
+  const handleManualReset = async () => {
+    try {
+      await resetLocalData();
+      await handleManualSync();
+    } catch (err: any) {
+      if ('message' in err) {
+        Toast.show({
+          type: 'error',
+          position: 'bottom',
+          text1: 'Erro ao resetar dados.',
+        });
+      }
+    }
   };
 
   const handleEditRecord = async (
     record: RecordItemType,
     shouldOpenImgPicker: boolean = false,
   ) => {
-    // await syncNow();
-
     const dto = useRecordStore
       .getState()
       .records.find(({ id }) => id === record.id);
@@ -132,8 +157,17 @@ export default function HomeScreen() {
     }
   };
 
-  const handleRemoveRecord = (record: { id: string }) => {
-    removeRecord(record.id);
+  const handleRemoveRecord = (record: { id: string; type: string }) => {
+    const typeLabel = record.type === 'COMPRA' ? 'Compra' : 'Venda';
+
+    Alert.alert(
+      `Excluir registro de ${typeLabel}?`,
+      'Esta ação não poderá ser desfeita',
+      [
+        { text: 'Sim, excluir', onPress: () => removeRecord(record.id) },
+        { text: 'Cancelar', style: 'cancel' },
+      ],
+    );
   };
 
   const mapRecordToCardItem = (record: RecordDTO) => ({
@@ -143,6 +177,7 @@ export default function HomeScreen() {
     description: record.description,
     synced: record.synced,
     images: record.images?.map(img => ({ uri: img.path })) ?? [],
+    user: record.user,
   });
 
   useEffect(() => {
@@ -151,6 +186,17 @@ export default function HomeScreen() {
 
     return unsubscribe;
   }, []);
+
+  useEffect(() => {
+    if (lastError) {
+      Toast.show({
+        type: 'error',
+        position: 'bottom',
+        text1: 'Erro ao sincronizar!',
+        text2: lastError,
+      });
+    }
+  }, [lastError]);
 
   return (
     <Container>
@@ -249,20 +295,32 @@ export default function HomeScreen() {
         <ListContainer>
           <RecordsHeaderRow>
             <RecordsTitle>Registros</RecordsTitle>
-            <SyncStatusTouchable onPress={handleManualSync}>
-              <MaterialIcons
-                name={isOnline ? 'wifi' : 'wifi-off'}
-                size={18}
-                color={isOnline ? theme.colors.success : theme.colors.warning}
-              />
-              <SyncStatusText>
-                {isSyncing
-                  ? 'Sincronizando...'
-                  : isOnline
-                  ? 'Online'
-                  : 'Offline'}
-              </SyncStatusText>
-            </SyncStatusTouchable>
+            <SyncActionsContainer>
+              {lastError !== null && (
+                <SyncStatusTouchable onPress={handleManualReset}>
+                  <MaterialIcons
+                    name="error-outline"
+                    size={18}
+                    color={theme.colors.error}
+                  />
+                  <SyncStatusText>Resetar modificações</SyncStatusText>
+                </SyncStatusTouchable>
+              )}
+              <SyncStatusTouchable onPress={handleManualSync}>
+                <MaterialIcons
+                  name={isOnline ? 'wifi' : 'wifi-off'}
+                  size={18}
+                  color={isOnline ? theme.colors.success : theme.colors.warning}
+                />
+                <SyncStatusText>
+                  {isSyncing
+                    ? 'Sincronizando...'
+                    : isOnline
+                    ? 'Online'
+                    : 'Offline'}
+                </SyncStatusText>
+              </SyncStatusTouchable>
+            </SyncActionsContainer>
           </RecordsHeaderRow>
 
           <FlatList
@@ -280,6 +338,7 @@ export default function HomeScreen() {
             renderItem={({ item }) => (
               <RecordCardItem
                 record={item}
+                currentUserId={userId}
                 onEdit={handleEditRecord}
                 onRemove={handleRemoveRecord}
               />
@@ -311,6 +370,11 @@ const Header = styled.View`
 const HeaderInfo = styled.View``;
 
 const HeaderQuitTouchable = styled.TouchableOpacity``;
+
+const SyncActionsContainer = styled.View`
+  flex-direction: row;
+  gap: 8px;
+`;
 
 const SyncStatusTouchable = styled.TouchableOpacity`
   flex-direction: row;

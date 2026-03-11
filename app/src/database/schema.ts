@@ -10,6 +10,14 @@ export const schema = appSchema({
         { name: 'type', type: 'string' },
         { name: 'date_time', type: 'string' },
         { name: 'description', type: 'string' },
+        { name: 'user_id', type: 'string', isIndexed: true },
+      ],
+    }),
+    tableSchema({
+      name: 'users',
+      columns: [
+        { name: 'username', type: 'string' },
+        { name: 'full_name', type: 'string' },
       ],
     }),
     tableSchema({

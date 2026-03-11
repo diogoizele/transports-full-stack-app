@@ -1,0 +1,10 @@
+{
+  "default": {
+    "code": 500,
+    "message": "Erro interno! Tente novamente mais tarde."
+  },
+  "unauthorized_record_access": {
+    "code": 403,
+    "message": "Você não pode alterar ou excluir registro de outros usuários."
+  }
+}

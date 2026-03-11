@@ -4,6 +4,7 @@ import { debounce } from 'lodash';
 import { SyncService } from '../services/syncService';
 import { RecordService } from '../services/recordService';
 import { useRecordStore } from './recordStore';
+import { handleError } from '../errors/errorHandler';
 
 type SyncState = {
   isOnline: boolean;
@@ -12,6 +13,7 @@ type SyncState = {
   lastError: string | null;
   setOnline: (online: boolean) => void;
   syncNow: () => Promise<void>;
+  resetLocalData: () => Promise<void>;
   queueSync: (reason: string) => void;
   debouncedSync: () => void;
   hasUnsyncedData: () => boolean;
@@ -36,12 +38,22 @@ export const useSyncStore = create<SyncState>((set, get) => ({
       const records = await RecordService.refetch();
 
       useRecordStore.getState().setRecords(records);
-    } catch (error: any) {
+    } catch (e) {
+      const error = handleError(e);
+
       set({
         isSyncing: false,
         lastError: error?.message ?? 'Erro ao sincronizar',
       });
+
+      throw error;
     }
+  },
+
+  resetLocalData: async () => {
+    set({ lastError: null });
+
+    await SyncService.reset();
   },
 
   queueSync: (reason: string) => {

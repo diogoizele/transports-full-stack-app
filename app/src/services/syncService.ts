@@ -15,7 +15,7 @@ export const SyncService = {
             pushChanges: postSync,
           });
         } catch (err) {
-          console.log(err);
+          throw err;
         } finally {
           currentSync = null;
         }
